@@ -14,7 +14,7 @@ class Simulator:
             time, event = hq.heappop(self._todo)
             self._currentTime = time
             event.proceed()
-            self._done += (time, job)
+            self._done += [(time, event)]
 
         def addEvent(self, time, event):
             hq.heappush(self._todo, (time, event))
@@ -25,18 +25,19 @@ class Simulator:
     def __init__(self):
         if Simulator.__self != None:
             raise Exception("Creating another instance of Simulator is forbidden")
-        self._eventQueue = EventQueue()
+        self.listeners = []
+        self._eventQueue = Simulator.EventQueue()
         Simulator.__self = self
         
     @staticmethod
     def getInstance(*args, **kwargs):
         if Simulator.__self == None:
-            Simulator(args, kwargs)
+            Simulator(*args, **kwargs)
         return Simulator.__self;
     
     @property
     def time(self):
-        return self._eventQueue.time
+        return self._eventQueue._currentTime
 
     def simulate(self):
         while len(self._eventQueue) > 0:
