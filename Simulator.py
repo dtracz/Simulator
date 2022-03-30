@@ -1,23 +1,25 @@
-import heapq as hq
+from sortedcontainers import SortedDict, SortedSet
+from toolkit import MultiDictRevDict
+
 
 class Simulator:
     class EventQueue:
         def __init__(self):
             self._currentTime = 0
-            self._todo = []
+            self._todo = MultiDictRevDict()
             self._done = []
 
         def __len__(self):
             return len(self._todo)
 
         def proceed(self):
-            time, event = hq.heappop(self._todo)
+            time, event = self._todo.popitem()
             self._currentTime = time
             event.proceed()
             self._done += [(time, event)]
 
         def addEvent(self, time, event):
-            hq.heappush(self._todo, (time, event))
+            self._todo[time] = event
 
 
     __self = None
