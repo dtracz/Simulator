@@ -6,7 +6,7 @@ class Event:
     def __init__(self, f, name=None, priority=0):
         self._f = f
         if (name is None):
-            name = f"Event {Event._index}"
+            name = f"Event_{Event._index}"
         self._name = name
         self._priority = priority
         Event._index += 1
@@ -15,40 +15,45 @@ class Event:
         self._f()
 
     def __lt__(self, other):
-        self._priority < other._priority
+        if self._priority != other._priority:
+            return self._priority > other._priority
+        return self._index < other._index
         
 
 
-class Job(Event):
-
-    def __init__(self, machine, operations, resources, name=None):
-        super().__init__(lambda: None, name, 100)
-        self._machine = machine
-        self._operations = operations
-        self._resources = resources
-
-    def calculateExecTime(self):
-        totalFrequency = 0
-        for name, resource in self._resources.items():
-            if name[:4] == "Core":
-                totalFrequency += resource.value
-        if totalFrequency == 0:
-            raise Exception(f"No cores provided for {Event._name}")
-        return self._operations / totalFrequency
-
-    def _finish(self):
-        for name, resource in self._resources.items():
-            self._machine.release(name, resource)
-        for listener in Simulator.getInstance().listeners:
-            listener.notify("Job done", self)
+class JobFinish(Event):
+    def __init__(self, job):
+        super().__init__(lambda: None, f"JobStart_{job.name}")
+        self._job = job
+        self._time = None
 
     def proceed(self):
-        for name, resource in self._resources.items():
-            self._machine.withold(name, resource)
-        time = Simulator.getInstance().time
-        execTime = self.calculateExecTime()
-        endTime = time + execTime
-        finishEvent = Event(self._finish, "finished " + self._name)
-        Simulator.getInstance().addEvent(endTime, finishEvent)
+        self._time = Simulator.getInstance().time
+        self._job.freeResources()
+        #  for listener in Simulator.getInstance().listeners:
+        #      listener.notify("Job done", self)
+
+
+
+class JobReorganize(Event):
+    pass
+
+
+
+class JobStart(Event):
+    def __init__(self, job):
+        super().__init__(lambda: None, f"JobStart_{job.name}")
+        self._job = job
+        self._time = None
+
+    def proceed(self):
+        self._time = Simulator.getInstance().time
+        self._job.allocateResources()
+        execTime = self._job.calculateExecTime()
+        endTime = self._time + execTime
+        jobFinish = JobFinish(self._job)
+        Simulator.getInstance().addEvent(endTime, jobFinish)
+        #  for listener in Simulator.getInstance().listeners:
+        #      listener.notify("Job done", self)
 
         

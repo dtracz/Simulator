@@ -1,9 +1,11 @@
 
 
 class Resource:
-    def __init__(self, value):
+    def __init__(self, name, value):
+        self.name = name
         self.value = value
         self.maxValue = value
+        self.jobsUsing = set()
 
     def withold(self, value):
         if value > self.value:
@@ -18,6 +20,18 @@ class Resource:
         else:
             raise Exception("Resource overflow after release")
 
+    def allocate(self, job):
+        reqResource = job.reqResources[self.name]
+        self.withold(reqResource.value)
+        job.allocResources[self.name] = reqResource
+        self.jobsUsing.add(job)
+
+    def free(self, job):
+        allocResource = job.allocResources[self.name]
+        self.release(allocResource.value)
+        del job.allocResources[self.name]
+        self.jobsUsing.remove(job)
+
 
 
 class Machine:
@@ -25,13 +39,13 @@ class Machine:
         self._name = name
         self._resources = resources
 
-    def withold(self, name, resource):
-        if name not in self._resources:
-            raise Exception(f"Machine {self._name} does not have any {name}")
-        self._resources[name].withold(resource.value)
+    def allocate(self, job):
+        for name, resource in self._resources.items():
+            if name in job.reqResources.keys():
+                resource.allocate(job)
 
-    def release(self, name, resource):
-        if name not in self._resources:
-            raise Exception(f"Machine {self._name} should not have any {name}")
-        self._resources[name].release(resource.value)
+    def free(self, job):
+        for name, resource in self._resources.items():
+            if name in job.allocResources.keys():
+                resource.free(job)
 
