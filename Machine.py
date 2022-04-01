@@ -21,15 +21,15 @@ class Resource:
             raise Exception("Resource overflow after release")
 
     def allocate(self, job):
-        reqResource = job.reqResources[self.name]
-        self.withold(reqResource.value)
-        job.allocResources[self.name] = reqResource
+        resource = job.requestedRes[self.name]
+        self.withold(resource.value)
+        job.obtainedRes[self.name] = resource
         self.jobsUsing.add(job)
 
     def free(self, job):
-        allocResource = job.allocResources[self.name]
-        self.release(allocResource.value)
-        del job.allocResources[self.name]
+        resource = job.obtainedRes[self.name]
+        self.release(resource.value)
+        del job.obtainedRes[self.name]
         self.jobsUsing.remove(job)
 
 
@@ -41,11 +41,11 @@ class Machine:
 
     def allocate(self, job):
         for name, resource in self._resources.items():
-            if name in job.reqResources.keys():
+            if name in job.requestedRes.keys():
                 resource.allocate(job)
 
     def free(self, job):
         for name, resource in self._resources.items():
-            if name in job.allocResources.keys():
+            if name in job.obtainedRes.keys():
                 resource.free(job)
 

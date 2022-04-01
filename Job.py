@@ -4,15 +4,15 @@ from sortedcontainers import SortedDict
 class Job:
     _index = 0
 
-    def __init__(self, operations, resources=None, machine=None, name=None):
+    def __init__(self, operations, resourceRequest=None, machine=None, name=None):
         if (name is None):
             name = f"Job_{Job._index}"
         self.name = name
         self.machine = machine
         self.operations = operations
         self.operationsLeft = operations
-        self.reqResources = resources
-        self.allocResources = {}
+        self.requestedRes = resourceRequest
+        self.obtainedRes = {}
         Job._index += 1
         self._lastUpdate = SortedDict()
 
@@ -20,7 +20,7 @@ class Job:
         self.machine = machine
 
     def asignResources(self, resources):
-        self.reqResources = resources
+        self.requestedRes = resources
 
     def allocateResources(self):
         if self.machine == None:
@@ -34,7 +34,7 @@ class Job:
 
     def calculateExecTime(self):
         totalFrequency = 0
-        for name, resource in self.allocResources.items():
+        for name, resource in self.obtainedRes.items():
             if name[:4] == "Core":
                 totalFrequency += resource.value
         if totalFrequency == 0:
