@@ -21,6 +21,9 @@ class Simulator:
         def addEvent(self, time, event):
             self._todo[time] = event
 
+        def removeEvent(self, event):
+            self._todo.remove(event)
+
 
     __self = None
 
@@ -47,4 +50,7 @@ class Simulator:
     
     def addEvent(self, time, event):
         self._eventQueue.addEvent(time, event)
+
+    def removeEvent(self, event):
+        self._eventQueue.removeEvent(event)
 
