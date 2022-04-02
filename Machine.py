@@ -1,3 +1,4 @@
+from Event import *
 
 
 class Resource:
@@ -31,6 +32,43 @@ class Resource:
         self.release(resource.value)
         del job.obtainedRes[self.name]
         self.jobsUsing.remove(job)
+
+
+
+class SharedResource(Resource):
+    def withold(self, value):
+        raise Exception("SharedResource cannot be reserved")
+
+    def release(self, value):
+        raise Exception("SharedResource cannot be reserved")
+
+    def recalculateJobs(self, exc=[]):
+        now = Simulator.getInstance().time
+        for job in self.jobsUsing:
+            if job in exc:
+                continue
+            jobRecalculate = JobRecalculate(job)
+            Simulator.getInstance().addEvent(now, jobRecalculate)
+
+    def allocate(self, job):
+        resource = job.requestedRes[self.name]
+        if resource.value != float('inf'):
+            return super().allocate(job)
+        self.jobsUsing.add(job)
+        self.value = self.maxValue / len(self.jobsUsing)
+        job.obtainedRes[self.name] = self
+        self.recalculateJobs([job])
+
+    def free(self, job):
+        resource = job.obtainedRes[self.name]
+        self.jobsUsing.remove(job)
+        if len(self.jobsUsing) > 0:
+            self.value = self.maxValue / len(self.jobsUsing)
+        else:
+            self.value = self.maxValue
+        del job.obtainedRes[self.name]
+        self.recalculateJobs([job])
+
 
 
 
