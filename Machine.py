@@ -10,7 +10,7 @@ class Resource:
 
     def withold(self, value):
         if value > self.value:
-            raise Exception(f"Requested {value} out of {self.value} avaliable")
+            raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
         self.value -= value
 
     def release(self, value=float('inf')):
@@ -19,7 +19,7 @@ class Resource:
         elif self.value + value <= self.maxValue:
             self.value += value
         else:
-            raise Exception("Resource overflow after release")
+            raise RuntimeError("Resource overflow after release")
 
     def allocate(self, job):
         resource = job.requestedRes[self.name]

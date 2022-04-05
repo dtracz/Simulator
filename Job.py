@@ -44,7 +44,7 @@ class Job:
     def calculateExecTime(self):
         totalFrequency = self.getCurrentSpeed()
         if totalFrequency == 0:
-            raise Exception(f"No cores provided for {Event._name}")
+            raise Exception(f"No cores provided for {self.name}")
         return self.operationsLeft / totalFrequency
 
     def registerProgress(self, time="now"):
