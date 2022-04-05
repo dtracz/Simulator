@@ -37,4 +37,8 @@ class MultiDictRevDict:
     def getkey(self, val):
         return self._revDict[val]
 
+    def clear(self):
+        self._fwdDict.clear()
+        self._revDict.clear()
+
 

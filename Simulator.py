@@ -24,6 +24,11 @@ class Simulator:
         def removeEvent(self, event):
             self._todo.remove(event)
 
+        def clear(self):
+            self._currentTime = 0
+            self._todo.clear()
+            self._done = []
+
 
     __self = None
 
@@ -53,4 +58,11 @@ class Simulator:
 
     def removeEvent(self, event):
         self._eventQueue.removeEvent(event)
+
+    def __del__(self):
+        self.listeners = []
+        self._eventQueue.clear()
+        Simulator.__self = None
+
+
 
