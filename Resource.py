@@ -9,11 +9,14 @@ class Resource:
         self.jobsUsing = set()
 
     def withold(self, value):
+        if value == float('inf'):
+            value = self.value
         if value > self.value:
             raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
         self.value -= value
+        return Resource(self.name, value)
 
-    def release(self, value=float('inf')):
+    def release(self, value):
         if value == float('inf'):
             self.value = self.maxValue
         elif self.value + value <= self.maxValue:
@@ -37,10 +40,13 @@ class Resource:
 
 class SharedResource(Resource):
     def withold(self, value):
-        raise Exception("SharedResource cannot be reserved")
+        if value != self.maxValue and value != float('inf'):
+            raise Exception("SharedResource cannot be partially obtained")
+        return self
 
     def release(self, value):
-        raise Exception("SharedResource cannot be reserved")
+        if value != self.maxValue and value != float('inf'):
+            raise Exception("SharedResource cannot be partially freed")
 
     def recalculateJobs(self, exc=[]):
         now = Simulator.getInstance().time
