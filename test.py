@@ -158,7 +158,7 @@ class SharedResourceTests(SimulatorTests):
 
 
 
-class SharedResourceTests(SimulatorTests):
+class VirtualizationTests(SimulatorTests):
 
     def test_allocateVM(self):
         inf = float('inf')
