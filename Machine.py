@@ -32,14 +32,12 @@ class Machine:
         self._hostedVMs = set()
 
     def allocate(self, job):
-        for name, resource in self._resources.items():
-            if name in job.requestedRes.keys():
-                resource.allocate(job)
+        for name in job.requestedRes.keys():
+            self._resources[name].allocate(job)
 
     def free(self, job):
-        for name, resource in self._resources.items():
-            if name in job.obtainedRes.keys():
-                resource.free(job)
+        for name in list(job.obtainedRes.keys()):
+            self._resources[name].free(job)
 
     def allocateVM(self, vm):
         if vm.host != self and vm.host != None:
