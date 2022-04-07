@@ -29,6 +29,7 @@ class Machine:
     def __init__(self, name, resources):
         self.name = name
         self._resources = resources
+        self._hostedVMs = set()
 
     def allocate(self, job):
         for name, resource in self._resources.items():
@@ -39,4 +40,20 @@ class Machine:
         for name, resource in self._resources.items():
             if name in job.obtainedRes.keys():
                 resource.free(job)
+
+
+
+class VirtualMachine(Machine):
+    def __init__(self, name, resourceRequest=None, host=None):
+        super().__init__(name, {})
+        self.host = host
+        self.resourceRequest = resourceRequest
+
+    def setResources(self, resources):
+        self._resources = resources
+
+    def unsetResources(self):
+        resources = self._resources
+        self._resources = {}
+        return resources
 
