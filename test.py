@@ -1,6 +1,7 @@
 import nose
 from unittest import TestCase
 from Simulator import *
+from Resource import *
 from Machine import *
 from Job import *
  
@@ -36,7 +37,7 @@ class SimpleTests(SimulatorTests):
         sim.addEvent(0, JobStart(job0))
 
         sim.simulate()
-        assert(sim.time == 10)
+        assert sim.time == 10
 
 
     def test_2jobs2cores(self):
@@ -63,7 +64,7 @@ class SimpleTests(SimulatorTests):
         sim.addEvent(0, JobStart(job1))
 
         sim.simulate()
-        assert(sim.time == 65)
+        assert sim.time == 65
 
 
     def test_ramFailure(self):
@@ -94,7 +95,7 @@ class SimpleTests(SimulatorTests):
             sim.simulate()
         except RuntimeError as e:
             cought = e.args[0] == 'Requested 8 out of 6 avaliable'
-        assert(cought)
+        assert cought
 
 
  
@@ -124,7 +125,7 @@ class SharedResourceTests(SimulatorTests):
         sim.addEvent(0, JobStart(job1))
 
         sim.simulate()
-        assert(sim.time == 40)
+        assert sim.time == 40
 
 
     def test_1vs2(self):
@@ -153,6 +154,36 @@ class SharedResourceTests(SimulatorTests):
         sim.addEvent(0, JobStart(job1))
 
         sim.simulate()
-        assert(sim.time == 65)
+        assert sim.time == 65
 
+
+
+class SharedResourceTests(SimulatorTests):
+
+    def test_allocateVM(self):
+        inf = float('inf')
+        resources = {
+            "Core 0": SharedResource("Core 0", 10), # GHz
+            "Core 1": SharedResource("Core 1", 10), # GHz
+            "RAM"   : Resource("RAM", 16),  # GB
+        }
+        m0 = Machine("m0", resources)
+        resourceReq0 = {
+            "Core 0": inf, # GHz
+            "Core 1": inf, # GHz
+            "RAM"   : 10,  # GB
+        }
+        vm0 = VirtualMachine("vm0", resourceReq0)
+        m0.allocateVM(vm0)
+        assert m0._resources["Core 0"].value == 10
+        assert m0._resources["Core 1"].value == 10
+        assert m0._resources["RAM"].value == 6
+        assert vm0._resources["Core 0"].value == 10
+        assert vm0._resources["Core 1"].value == 10
+        assert vm0._resources["RAM"].value == 10
+        m0.freeVM(vm0)
+        assert m0._resources["Core 0"].value == 10
+        assert m0._resources["Core 1"].value == 10
+        assert m0._resources["RAM"].value == 16
+        assert len(vm0._resources) == 0
 
