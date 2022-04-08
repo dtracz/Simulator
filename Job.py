@@ -16,7 +16,7 @@ class Job:
         self.machine = machine
         self.operations = operations
         self.operationsLeft = operations
-        self.requestedRes = resourceRequest
+        self.requestedRes = resourceRequest #{name: value}
         self.obtainedRes = {}
         self.predictedFinish = None
         Job._index += 1

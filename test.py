@@ -23,13 +23,13 @@ class SimpleTests(SimulatorTests):
     def test_1job(self):
         resources = {
             "Core 0": Resource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 16),  # GB
+            "RAM"   : Resource("RAM", 16),    # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = {
-            "Core 0": Resource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 5),  # GB
+            "Core 0": 10, # GHz
+            "RAM"   : 5,  # GB
         }
         job0 = Job(100, res0, m0)
 
@@ -44,17 +44,17 @@ class SimpleTests(SimulatorTests):
         resources = {
             "Core 0": Resource("Core 0", 10), # GHz
             "Core 1": Resource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 16),  # GB
+            "RAM"   : Resource("RAM", 16),    # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = {
-            "Core 0": Resource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 5),  # GB
+            "Core 0": 10, # GHz
+            "RAM"   : 5,  # GB
         }
         res1 = {
-            "Core 1": Resource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 8),  # GB
+            "Core 1": 10, # GHz
+            "RAM"   : 8,  # GB
         }
         job0 = Job(650, res0, m0)
         job1 = Job(450, res1, m0)
@@ -71,17 +71,17 @@ class SimpleTests(SimulatorTests):
         resources = {
             "Core 0": Resource("Core 0", 10), # GHz
             "Core 1": Resource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 16),  # GB
+            "RAM"   : Resource("RAM", 16),    # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = {
-            "Core 0": Resource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 10),  # GB
+            "Core 0": 10, # GHz
+            "RAM"   : 10, # GB
         }
         res1 = {
-            "Core 1": Resource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 8),  # GB
+            "Core 1": 10, # GHz
+            "RAM"   : 8,  # GB
         }
         job0 = Job(650, res0, m0)
         job1 = Job(450, res1, m0)
@@ -105,17 +105,17 @@ class SharedResourceTests(SimulatorTests):
         inf = float('inf')
         resources = {
             "Core 0": SharedResource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 16),  # GB
+            "RAM"   : Resource("RAM", 16),          # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = {
-            "Core 0": Resource("Core 0", inf), # GHz
-            "RAM"   : Resource("RAM", 5),  # GB
+            "Core 0": inf, # GHz
+            "RAM"   : 5,   # GB
         }
         res1 = {
-            "Core 0": Resource("Core 0", inf), # GHz
-            "RAM"   : Resource("RAM", 8),  # GB
+            "Core 0": inf, # GHz
+            "RAM"   : 8,   # GB
         }
         job0 = Job(200, res0, m0)
         job1 = Job(200, res1, m0)
@@ -138,13 +138,13 @@ class SharedResourceTests(SimulatorTests):
         m0 = Machine("m0", resources)
 
         res0 = {
-            "Core 0": Resource("Core 0", inf), # GHz
-            "Core 1": Resource("Core 1", inf), # GHz
-            "RAM"   : Resource("RAM", 5),  # GB
+            "Core 0": inf, # GHz
+            "Core 1": inf, # GHz
+            "RAM"   : 5,   # GB
         }
         res1 = {
-            "Core 1": Resource("Core 1", inf), # GHz
-            "RAM"   : Resource("RAM", 8),  # GB
+            "Core 1": inf, # GHz
+            "RAM"   : 8,   # GB
         }
         job0 = Job(600, res0, m0)
         job1 = Job(400, res1, m0)

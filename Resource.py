@@ -36,8 +36,8 @@ class Resource:
             raise RuntimeError("Resource overflow after release")
 
     def allocate(self, job):
-        resource = job.requestedRes[self.name]
-        self.withold(resource.value)
+        requestedValue = job.requestedRes[self.name]
+        resource = self.withold(requestedValue)
         job.obtainedRes[self.name] = resource
         self.jobsUsing.add(job)
 
@@ -75,8 +75,8 @@ class SharedResource(Resource):
             Simulator.getInstance().addEvent(now, jobRecalculate)
 
     def allocate(self, job):
-        resource = job.requestedRes[self.name]
-        if resource.value != float('inf'):
+        requestedValue = job.requestedRes[self.name]
+        if requestedValue != float('inf'):
             return super().allocate(job)
         self.jobsUsing.add(job)
         self.value = self.maxValue / len(self.jobsUsing)

@@ -80,7 +80,7 @@ class VirtualMachine(Machine):
     def __init__(self, name, resourceRequest=None, host=None):
         super().__init__(name, {})
         self.host = host
-        self.resourceRequest = resourceRequest
+        self.resourceRequest = resourceRequest #{name: value}
 
     def setResources(self, resources):
         self._resources = resources
