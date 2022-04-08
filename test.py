@@ -133,7 +133,7 @@ class SharedResourceTests(SimulatorTests):
         resources = {
             "Core 0": SharedResource("Core 0", 10), # GHz
             "Core 1": SharedResource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 16),  # GB
+            "RAM"   : Resource("RAM", 16),          # GB
         }
         m0 = Machine("m0", resources)
 
@@ -165,7 +165,7 @@ class VirtualizationTests(SimulatorTests):
         resources = {
             "Core 0": SharedResource("Core 0", 10), # GHz
             "Core 1": SharedResource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 16),  # GB
+            "RAM"   : Resource("RAM", 16),          # GB
         }
         m0 = Machine("m0", resources)
         resourceReq0 = {
@@ -186,4 +186,37 @@ class VirtualizationTests(SimulatorTests):
         assert m0._resources["Core 1"].value == 10
         assert m0._resources["RAM"].value == 16
         assert len(vm0._resources) == 0
+
+
+    def test_2jobsOn2VMs(self):
+        inf = float('inf')
+        resources = {
+            "Core 0": SharedResource("Core 0", 10), # GHz
+            "RAM"   : Resource("RAM", 16),          # GB
+        }
+        m0 = Machine("m0", resources)
+        resourceReq0 = {
+            "Core 0": inf, # GHz
+            "RAM"   : 8,   # GB
+        }
+        vm0 = VirtualMachine("vm0", resourceReq0)
+        resourceReq1 = {
+            "Core 0": inf, # GHz
+            "RAM"   : 8,   # GB
+        }
+        vm1 = VirtualMachine("vm1", resourceReq0)
+        m0.allocateVM(vm0)
+        m0.allocateVM(vm1)
+        job0 = Job(1000, {"Core 0": inf, "RAM": 2}, vm0)
+        job1 = Job(1000, {"Core 0": inf, "RAM": 2}, vm1)
+
+        sim = Simulator.getInstance()
+        sim.addEvent(0, JobStart(job0))
+        sim.addEvent(1, JobStart(job1))
+        sim.simulate()
+
+        m0.freeVM(vm0)
+        m0.freeVM(vm1)
+
+        assert sim.time == 200
 
