@@ -3,7 +3,19 @@ from toolkit import MultiDictRevDict
 
 
 class Simulator:
+    """
+    Singleton, the main Simulator class.
+    Responsible for running simulation.
+    Supports adding and removing future events."
+    """
     class EventQueue:
+        """
+        Queue of future events stored in MultiDictRevDict structure.
+        Stores past events in list [(time_executed, event)].
+        Supports adding and removing future events,
+        and porceeding the most recent one.
+
+        """
         def __init__(self):
             self._currentTime = 0
             self._todo = MultiDictRevDict()

@@ -2,6 +2,11 @@ from sortedcontainers import SortedDict, SortedSet
 
 
 class MultiDictRevDict:
+    """
+    Bidirectional map with multiple value per one key feature
+    and ordered by key in one side, but unordered and single
+    value per key in reverse.
+    """
     def __init__(self):
         self._fwdDict = SortedDict()
         self._revDict = {}

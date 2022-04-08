@@ -2,6 +2,9 @@ from Resource import *
 
 
 class Infrastructure(dict):
+    """
+    Infrastructure represents all hardware avaliable to run jobs.
+    """
     __self = None
 
     def __init__(self):
@@ -26,6 +29,10 @@ class Infrastructure(dict):
 
 
 class Machine:
+    """
+    Hardware machine, that holds resources and is able
+    to run jobs or host virtual machines.
+    """
     def __init__(self, name, resources):
         self.name = name
         self._resources = resources
@@ -66,6 +73,10 @@ class Machine:
 
 
 class VirtualMachine(Machine):
+    """
+    Machine, that could be allocated on other machines,
+    ald use part of it's resources to run jobs.
+    """
     def __init__(self, name, resourceRequest=None, host=None):
         super().__init__(name, {})
         self.host = host

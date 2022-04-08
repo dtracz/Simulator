@@ -2,6 +2,12 @@ from Event import *
 
 
 class Resource:
+    """
+    Bisic resource class. Represents it's name and values
+    (max possible and current), and provides information about
+    all jobs that re using this resource at the moment.
+    Provides methonds of allocation and freeing resource.
+    """
     def __init__(self, name, value):
         self.name = name
         self.value = value
@@ -9,6 +15,11 @@ class Resource:
         self.jobsUsing = set()
 
     def withold(self, value):
+        """
+        value -- amount of resource to withold.
+        Reduces current value of resource by requested value.
+        Returns new Resource representing obtained resource.
+        """
         if value == float('inf'):
             value = self.value
         if value > self.value:
@@ -39,6 +50,13 @@ class Resource:
 
 
 class SharedResource(Resource):
+    """
+    Resource that is automatically spread among all jobs
+    that are using it at the moment.
+    If n jobs are using SharedResource, all of them benefits equally
+    from 1/n of it's value. If job starts of finishes to use SharedResource,
+    all other using it at the moment are recalculated.
+    """
     def withold(self, value):
         if value != self.maxValue and value != float('inf'):
             raise Exception("SharedResource cannot be partially obtained")
@@ -48,10 +66,10 @@ class SharedResource(Resource):
         if value != self.maxValue and value != float('inf'):
             raise Exception("SharedResource cannot be partially freed")
 
-    def recalculateJobs(self, exc=[]):
+    def recalculateJobs(self, excluded=[]):
         now = Simulator.getInstance().time
         for job in self.jobsUsing:
-            if job in exc:
+            if job in excluded:
                 continue
             jobRecalculate = JobRecalculate(job)
             Simulator.getInstance().addEvent(now, jobRecalculate)

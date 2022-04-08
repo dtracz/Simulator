@@ -1,6 +1,10 @@
 from Simulator import Simulator
 
 class Event:
+    """
+    Simple 0-argument function wrapper.
+    Basic Event executed by Simulator.
+    """
     _index = 0
 
     def __init__(self, f, name=None, priority=0):
@@ -22,6 +26,11 @@ class Event:
 
 
 class JobFinish(Event):
+    """
+    Job finish event.
+    Releases resources at the end of the job.
+    Usually scheduled automatically.
+    """
     def __init__(self, job, priority=80):
         super().__init__(lambda: None, f"JobFinish_{job.name}", priority)
         self._job = job
@@ -34,6 +43,10 @@ class JobFinish(Event):
 
 
 class JobStart(Event):
+    """
+    Job start event.
+    Allocates resources for job and schedules it's finish.
+    """
     def __init__(self, job, priority=0):
         super().__init__(lambda: None, f"JobStart_{job.name}", priority)
         self._job = job
@@ -55,6 +68,10 @@ class JobStart(Event):
 
 
 class JobRecalculate(JobStart):
+    """
+    Job recalculation. Needs to be proceed when
+    some resources of already running job change.
+    """
     def __init__(self, job, priority=100):
         super().__init__(job, priority)
         self.name = f"JobRecalculate_{job.name}"

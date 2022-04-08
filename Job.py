@@ -3,6 +3,10 @@ from Simulator import *
 
 
 class Job:
+    """
+    Job structure. Contains all information about job
+    and provides mothods of it's procedure and maintenance.
+    """
     _index = 0
 
     def __init__(self, operations, resourceRequest=None, machine=None, name=None):
