@@ -1,16 +1,18 @@
 from Resource import *
 
 
-class Infrastructure(dict):
+class Infrastructure:
     """
     Infrastructure represents all hardware avaliable to run jobs.
     """
     __self = None
 
-    def __init__(self):
+    def __init__(self, machines, VMAllocatorClass):
         if Infrastructure.__self != None:
             raise Exception("Creating another instance of Infrastructure is forbidden")
-        self.machine = super()
+        self.machines = set(machines)
+        self._knownVMs = set()
+        self._vmAlocator = VMAllocatorClass(self.machines, self._knownVMs)
         Infrastructure.__self = self
 
     @staticmethod
@@ -19,13 +21,13 @@ class Infrastructure(dict):
             Infrastructure(*args, **kwargs)
         return Simulator.__self;
 
-    def addMachine(self, machine):
-        self[machine.name] = machine
+    def scheduleVM(self, vm):
+        self._vmAllocator.schedule(vm)
 
-    @property
-    def machines(self):
-        return list(self.values())
-
+    def scheduleJob(self, job, vm):
+        if vm not in self._knownVMs:
+            raise Exception(f"Requested job on unknown vm {vm.name}")
+        vm.schedule(job)
 
 
 class Machine:
@@ -33,10 +35,11 @@ class Machine:
     Hardware machine, that holds resources and is able
     to run jobs or host virtual machines.
     """
-    def __init__(self, name, resources):
+    def __init__(self, name, resources, scheduler=None):
         self.name = name
         self._resources = resources
         self._hostedVMs = set()
+        self._scheduler = scheduler
 
     def allocate(self, job):
         for name in job.requestedRes.keys():
@@ -45,6 +48,9 @@ class Machine:
     def free(self, job):
         for name in list(job.obtainedRes.keys()):
             self._resources[name].free(job)
+
+    def schedule(self, job):
+        self._scheduler.schedule(job)
 
     def allocateVM(self, vm):
         if vm.host != self and vm.host != None:
@@ -81,6 +87,7 @@ class VirtualMachine(Machine):
         super().__init__(name, {})
         self.host = host
         self.resourceRequest = resourceRequest #{name: value}
+        self._resources = None
 
     def setResources(self, resources):
         self._resources = resources
