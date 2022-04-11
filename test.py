@@ -9,12 +9,15 @@ from Job import *
 
 class SimulatorTests(TestCase):
 
-    def setup(self):
-        Simulator.getInstance()
-
-    def teardown(self):
+    def setUp(self):
         sim = Simulator.getInstance()
-        del sim
+        assert sim.time == 0
+        assert len(sim._eventQueue._todo) == 0
+        assert len(sim._eventQueue._done) == 0
+
+    def tearDown(self):
+        sim = Simulator.getInstance()
+        sim.clear()
 
 
 
@@ -207,8 +210,8 @@ class VirtualizationTests(SimulatorTests):
         vm1 = VirtualMachine("vm1", resourceReq0)
         m0.allocateVM(vm0)
         m0.allocateVM(vm1)
-        job0 = Job(1000, {"Core 0": inf, "RAM": 2}, vm0)
-        job1 = Job(1000, {"Core 0": inf, "RAM": 2}, vm1)
+        job0 = Job(100, {"Core 0": inf, "RAM": 2}, vm0)
+        job1 = Job(100, {"Core 0": inf, "RAM": 2}, vm1)
 
         sim = Simulator.getInstance()
         sim.addEvent(0, JobStart(job0))
@@ -218,5 +221,5 @@ class VirtualizationTests(SimulatorTests):
         m0.freeVM(vm0)
         m0.freeVM(vm1)
 
-        assert sim.time == 200
+        assert sim.time == 20
 

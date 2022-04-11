@@ -71,7 +71,7 @@ class Simulator:
     def removeEvent(self, event):
         self._eventQueue.removeEvent(event)
 
-    def __del__(self):
+    def clear(self):
         self.listeners = []
         self._eventQueue.clear()
         Simulator.__self = None
