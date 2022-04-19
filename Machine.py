@@ -35,14 +35,14 @@ class Machine:
     Hardware machine, that holds resources and is able
     to run jobs or host virtual machines.
     """
-    def __init__(self, name, resources, scheduler=None):
+    def __init__(self, name, resources, SchedulerClass=None):
         self.name = name
         self._resources = resources
         self._hostedVMs = set()
-        self._scheduler = scheduler
+        self._scheduler = None if SchedulerClass is None else SchedulerClass(self)
 
     def allocate(self, job):
-        for name in job.requestedRes.keys():
+        for name in job.resourceRequest.keys():
             self._resources[name].allocate(job)
 
     def free(self, job):
@@ -50,6 +50,8 @@ class Machine:
             self._resources[name].free(job)
 
     def schedule(self, job):
+        if self._scheduler is None:
+            raise Exception(f"Machine {self.name} has no scheduler")
         self._scheduler.schedule(job)
 
     def allocateVM(self, vm):
@@ -83,8 +85,8 @@ class VirtualMachine(Machine):
     Machine, that could be allocated on other machines,
     ald use part of it's resources to run jobs.
     """
-    def __init__(self, name, resourceRequest=None, host=None):
-        super().__init__(name, {})
+    def __init__(self, name, resourceRequest=None, SchedulerClass=None, host=None):
+        super().__init__(name, {}, SchedulerClass)
         self.host = host
         self.resourceRequest = resourceRequest #{name: value}
         self._resources = None
