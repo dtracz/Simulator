@@ -1,5 +1,17 @@
 from sortedcontainers import SortedDict, SortedSet
 from toolkit import MultiDictRevDict
+from abc import ABCMeta, abstractmethod
+
+
+class NotificationListener(metaclass=ABCMeta):
+    def __new__(cls, *args, **kwargs):
+        obj = super(NotificationListener, cls).__new__(cls)
+        Simulator.getInstance().registerListener(obj)
+        return obj
+
+    @abstractmethod
+    def notify(self, event):
+        pass
 
 
 class Simulator:
@@ -29,6 +41,7 @@ class Simulator:
             self._currentTime = time
             event.proceed()
             self._done += [(time, event)]
+            return self._done[-1]
 
         def addEvent(self, time, event):
             self._todo[time] = event
@@ -47,7 +60,7 @@ class Simulator:
     def __init__(self):
         if Simulator.__self != None:
             raise Exception("Creating another instance of Simulator is forbidden")
-        self.listeners = []
+        self._listeners = []
         self._eventQueue = Simulator.EventQueue()
         Simulator.__self = self
         
@@ -63,7 +76,9 @@ class Simulator:
 
     def simulate(self):
         while len(self._eventQueue) > 0:
-            self._eventQueue.proceed()
+            time, event = self._eventQueue.proceed()
+            for listener in self._listeners:
+                listener.notify(event)
     
     def addEvent(self, time, event):
         self._eventQueue.addEvent(time, event)
@@ -71,8 +86,11 @@ class Simulator:
     def removeEvent(self, event):
         self._eventQueue.removeEvent(event)
 
+    def registerListener(self, listener):
+        self._listeners += [listener]
+
     def __del__(self):
-        self.listeners = []
+        self._listeners = []
         self._eventQueue.clear()
         Simulator.__self = None
 
