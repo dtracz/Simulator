@@ -94,4 +94,26 @@ class JobRecalculate(JobStart):
         self.deletePrevFinish()
         self.scheduleFinish()
 
-        
+
+
+class VMStart(Event):
+    def __init__(self, host, vm, priority=10):
+        super().__init__(lambda: None, f"VMStart_{vm.name}", priority)
+        self.host = host
+        self.vm = vm
+
+    def proceed(self):
+        self.host.allocateVM(self.vm)
+
+
+
+class VMEnd(Event):
+    def __init__(self, host, vm, priority=20):
+        super().__init__(lambda: None, f"VMEnd_{vm.name}", priority)
+        self.host = host
+        self.vm = vm
+
+    def proceed(self):
+        self.host.freeVM(self.vm)
+
+
