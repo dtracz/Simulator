@@ -40,12 +40,12 @@ class JobFinish(Event):
     """
     def __init__(self, job, priority=80):
         super().__init__(lambda: None, f"JobFinish_{job.name}", priority)
-        self._job = job
+        self.job = job
         self._time = None
 
     def proceed(self):
         self._time = Simulator.getInstance().time
-        self._job.freeResources()
+        self.job.freeResources()
 
 
 
@@ -56,20 +56,20 @@ class JobStart(Event):
     """
     def __init__(self, job, priority=0):
         super().__init__(lambda: None, f"JobStart_{job.name}", priority)
-        self._job = job
+        self.job = job
         self._time = None
 
     def scheduleFinish(self):
         self._time = Simulator.getInstance().time
-        execTime = self._job.calculateExecTime()
+        execTime = self.job.calculateExecTime()
         endTime = self._time + execTime
-        jobFinish = JobFinish(self._job)
+        jobFinish = JobFinish(self.job)
         Simulator.getInstance().addEvent(endTime, jobFinish)
-        self._job.predictedFinish = jobFinish
-        self._job.update()
+        self.job.predictedFinish = jobFinish
+        self.job.update()
 
     def proceed(self):
-        self._job.allocateResources()
+        self.job.allocateResources()
         self.scheduleFinish()
 
 
@@ -84,13 +84,13 @@ class JobRecalculate(JobStart):
         self.name = f"JobRecalculate_{job.name}"
 
     def deletePrevFinish(self):
-        jobFinish = self._job.predictedFinish
+        jobFinish = self.job.predictedFinish
         if jobFinish is None:
             return
         Simulator.getInstance().removeEvent(jobFinish)
 
     def proceed(self):
-        self._job.registerProgress()
+        self.job.registerProgress()
         self.deletePrevFinish()
         self.scheduleFinish()
 
