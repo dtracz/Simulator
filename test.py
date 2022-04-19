@@ -4,6 +4,7 @@ from Simulator import *
 from Resource import *
 from Machine import *
 from Job import *
+from Schedulers import *
  
 
 
@@ -219,4 +220,37 @@ class VirtualizationTests(SimulatorTests):
         m0.freeVM(vm1)
 
         assert sim.time == 200
+
+
+
+class SchedulersTests(SimulatorTests):
+
+    def test_jobSchedulerSimple(self):
+        inf = float('inf')
+        resources = {
+            "Core 0": SharedResource("Core 0", 10), # GHz
+            "RAM"   : Resource("RAM", 16),          # GB
+        }
+        m0 = Machine("m0", resources)
+
+        resourceReq0 = {
+            "Core 0": inf, # GHz
+            "RAM"   : 8,   # GB
+        }
+        vm0 = VirtualMachine("vm0", resourceReq0, JobSchedulerSimple)
+
+        job0 = Job(500, {"Core 0": inf, "RAM": 8}, vm0)
+        job1 = Job(1000, {"Core 0": inf, "RAM": 6}, vm0)
+        job2 = Job(1000, {"Core 0": inf, "RAM": 6}, vm0)
+
+        vm0.schedule(job0)
+        vm0.schedule(job1)
+        vm0.schedule(job2)
+
+        sim = Simulator.getInstance()
+        sim.addEvent(0, VMStart(m0, vm0))
+        sim.simulate()
+
+        m0.freeVM(vm0)
+        assert sim.time == 250
 
