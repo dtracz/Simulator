@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from toolkit import *
 from Simulator import *
-from Event import *
+from Events import *
 from Machine import *
 
 

@@ -1,35 +1,4 @@
-from Simulator import Simulator
-
-class Event:
-    """
-    Simple 0-argument function wrapper.
-    Basic Event executed by Simulator.
-    """
-    _noCreated = 0
-
-    def __init__(self, f, name=None, priority=0):
-        self._f = f
-        self._index = Event._noCreated
-        if (name is None):
-            name = f"Event_{self._index}"
-        self.name = name
-        self._priority = priority
-        Event._noCreated += 1
-
-    def proceed(self):
-        self._f()
-
-    def __lt__(self, other):
-        if self._priority != other._priority:
-            return self._priority > other._priority
-        return self._index < other._index
-
-    def __eq__(self, other):
-        return self._index == other._index
-
-    def __hash__(self):
-        return self._index
-        
+from Simulator import Event, Simulator
 
 
 class JobFinish(Event):

@@ -1,4 +1,4 @@
-from Event import *
+from Events import *
 
 
 class Resource:

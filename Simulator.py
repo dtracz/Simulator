@@ -3,6 +3,38 @@ from toolkit import MultiDictRevDict
 from abc import ABCMeta, abstractmethod
 
 
+class Event:
+    """
+    Simple 0-argument function wrapper.
+    Basic Event executed by Simulator.
+    """
+    _noCreated = 0
+
+    def __init__(self, f, name=None, priority=0):
+        self._f = f
+        self._index = Event._noCreated
+        if (name is None):
+            name = f"Event_{self._index}"
+        self.name = name
+        self._priority = priority
+        Event._noCreated += 1
+
+    def proceed(self):
+        self._f()
+
+    def __lt__(self, other):
+        if self._priority != other._priority:
+            return self._priority > other._priority
+        return self._index < other._index
+
+    def __eq__(self, other):
+        return self._index == other._index
+
+    def __hash__(self):
+        return self._index
+
+
+
 class NotificationListener(metaclass=ABCMeta):
     def __new__(cls, *args, **kwargs):
         obj = super(NotificationListener, cls).__new__(cls)
@@ -12,6 +44,7 @@ class NotificationListener(metaclass=ABCMeta):
     @abstractmethod
     def notify(self, event):
         pass
+
 
 
 class Simulator:
@@ -62,6 +95,7 @@ class Simulator:
             raise Exception("Creating another instance of Simulator is forbidden")
         self._listeners = []
         self._eventQueue = Simulator.EventQueue()
+        self.addEvent(self.time, Event(lambda: None, "SimulationStart", 1000))
         Simulator.__self = self
         
     @staticmethod
