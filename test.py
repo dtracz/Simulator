@@ -4,6 +4,7 @@ from Simulator import *
 from Resource import *
 from Machine import *
 from Job import *
+from Schedulers import *
  
 
 
@@ -12,7 +13,7 @@ class SimulatorTests(TestCase):
     def setUp(self):
         sim = Simulator.getInstance()
         assert sim.time == 0
-        assert len(sim._eventQueue._todo) == 0
+        assert len(sim._eventQueue._todo) == 1
         assert len(sim._eventQueue._done) == 0
 
     def tearDown(self):
@@ -222,4 +223,73 @@ class VirtualizationTests(SimulatorTests):
         m0.freeVM(vm1)
 
         assert sim.time == 20
+
+
+
+class SchedulersTests(SimulatorTests):
+
+    def test_jobSchedulerSimple(self):
+        inf = float('inf')
+        resources = {
+            "Core 0": SharedResource("Core 0", 10), # GHz
+            "RAM"   : Resource("RAM", 16),          # GB
+        }
+        m0 = Machine("m0", resources)
+
+        resourceReq0 = {
+            "Core 0": inf, # GHz
+            "RAM"   : inf, # GB
+        }
+        vm0 = VirtualMachine("vm0", resourceReq0,
+                lambda machine: JobSchedulerSimple(machine, autofree=True))
+
+        job0 = Job(500, {"Core 0": inf, "RAM": 8}, vm0)
+        job1 = Job(1000, {"Core 0": inf, "RAM": 6}, vm0)
+        job2 = Job(1000, {"Core 0": inf, "RAM": 6}, vm0)
+
+        vm0.scheduleJob(job0)
+        vm0.scheduleJob(job1)
+        vm0.scheduleJob(job2)
+
+        sim = Simulator.getInstance()
+        sim.addEvent(0, VMStart(m0, vm0))
+        sim.simulate()
+
+        assert sim.time == 250
+
+
+    def test_vmSchedulerSimple(self):
+        inf = float('inf')
+        resources = {
+            "Core 0": SharedResource("Core 0", 10), # GHz
+            "RAM"   : Resource("RAM", 16),          # GB
+        }
+        m0 = Machine("m0", resources, lambda m: None, VMSchedulerSimple)
+
+        vm_id = 0
+        def getVM(vm_id):
+            resourceReq = {
+                "Core 0": inf, # GHz
+                "RAM"   : 8, # GB
+            }
+
+            vm = VirtualMachine(f"vm{vm_id}", resourceReq,
+                    lambda machine: JobSchedulerSimple(machine, autofree=True))
+            job0 = Job(500, {"Core 0": inf, "RAM": 8}, vm)
+            job1 = Job(1000, {"Core 0": inf, "RAM": 6}, vm)
+            job2 = Job(1000, {"Core 0": inf, "RAM": 6}, vm)
+            vm.scheduleJob(job0)
+            vm.scheduleJob(job1)
+            vm.scheduleJob(job2)
+            return vm
+
+        m0.scheduleVM(getVM(0))
+        m0.scheduleVM(getVM(1))
+        m0.scheduleVM(getVM(2))
+        m0.scheduleVM(getVM(3))
+
+        sim = Simulator.getInstance()
+        sim.simulate()
+
+        assert sim.time == 1000
 

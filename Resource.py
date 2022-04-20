@@ -1,4 +1,4 @@
-from Event import *
+from Events import *
 
 
 class Resource:
@@ -36,7 +36,7 @@ class Resource:
             raise RuntimeError("Resource overflow after release")
 
     def allocate(self, job):
-        requestedValue = job.requestedRes[self.name]
+        requestedValue = job.resourceRequest[self.name]
         resource = self.withold(requestedValue)
         job.obtainedRes[self.name] = resource
         self.jobsUsing.add(job)
@@ -75,7 +75,7 @@ class SharedResource(Resource):
             Simulator.getInstance().addEvent(now, jobRecalculate)
 
     def allocate(self, job):
-        requestedValue = job.requestedRes[self.name]
+        requestedValue = job.resourceRequest[self.name]
         if requestedValue != float('inf'):
             return super().allocate(job)
         self.jobsUsing.add(job)

@@ -1,5 +1,50 @@
 from sortedcontainers import SortedDict, SortedSet
 from toolkit import MultiDictRevDict
+from abc import ABCMeta, abstractmethod
+
+
+class Event:
+    """
+    Simple 0-argument function wrapper.
+    Basic Event executed by Simulator.
+    """
+    _noCreated = 0
+
+    def __init__(self, f, name=None, priority=0):
+        self._f = f
+        self._index = Event._noCreated
+        if (name is None):
+            name = f"Event_{self._index}"
+        self.name = name
+        self._priority = priority
+        Event._noCreated += 1
+
+    def proceed(self):
+        self._f()
+
+    def __lt__(self, other):
+        if self._priority != other._priority:
+            return self._priority > other._priority
+        return self._index < other._index
+
+    def __eq__(self, other):
+        return self._index == other._index
+
+    def __hash__(self):
+        return self._index
+
+
+
+class NotificationListener(metaclass=ABCMeta):
+    def __new__(cls, *args, **kwargs):
+        obj = super(NotificationListener, cls).__new__(cls)
+        Simulator.getInstance().registerListener(obj)
+        return obj
+
+    @abstractmethod
+    def notify(self, event):
+        pass
+
 
 
 class Simulator:
@@ -29,6 +74,7 @@ class Simulator:
             self._currentTime = time
             event.proceed()
             self._done += [(time, event)]
+            return self._done[-1]
 
         def addEvent(self, time, event):
             self._todo[time] = event
@@ -47,8 +93,9 @@ class Simulator:
     def __init__(self):
         if Simulator.__self != None:
             raise Exception("Creating another instance of Simulator is forbidden")
-        self.listeners = []
+        self._listeners = []
         self._eventQueue = Simulator.EventQueue()
+        self.addEvent(self.time, Event(lambda: None, "SimulationStart", 1000))
         Simulator.__self = self
         
     @staticmethod
@@ -63,7 +110,9 @@ class Simulator:
 
     def simulate(self):
         while len(self._eventQueue) > 0:
-            self._eventQueue.proceed()
+            time, event = self._eventQueue.proceed()
+            for listener in self._listeners:
+                listener.notify(event)
     
     def addEvent(self, time, event):
         self._eventQueue.addEvent(time, event)
@@ -71,10 +120,11 @@ class Simulator:
     def removeEvent(self, event):
         self._eventQueue.removeEvent(event)
 
+    def registerListener(self, listener):
+        self._listeners += [listener]
+
     def clear(self):
-        self.listeners = []
+        self._listeners = []
         self._eventQueue.clear()
         Simulator.__self = None
-
-
 

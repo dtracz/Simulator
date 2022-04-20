@@ -16,7 +16,7 @@ class Job:
         self.machine = machine
         self.operations = operations
         self.operationsLeft = operations
-        self.requestedRes = resourceRequest #{name: value}
+        self.resourceRequest = resourceRequest #{name: value}
         self.obtainedRes = {}
         self.predictedFinish = None
         Job._index += 1
@@ -26,7 +26,7 @@ class Job:
         self.machine = machine
 
     def asignResources(self, resources):
-        self.requestedRes = resources
+        self.resourceRequest = resources
 
     def allocateResources(self):
         if self.machine == None:

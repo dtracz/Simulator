@@ -9,7 +9,7 @@ class MultiDictRevDict:
     """
     def __init__(self):
         self._fwdDict = SortedDict()
-        self._revDict = {}
+        self._revDict = SortedDict()
     
     def add(self, key, val):
         if val in self._revDict.keys():
