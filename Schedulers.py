@@ -6,6 +6,51 @@ from Machine import *
 
 
 
+class VMSchedulerSimple(NotificationListener):
+    def __init__(self, machine):
+        self._machine = machine
+        self._vmQueue = []
+
+    def isFittable(self, vm):
+        for name, value in vm.resourceRequest.items():
+            if name not in self._machine._resources:
+                return False
+            if value != float('inf') and \
+               self._machine._resources[name].maxValue < value:
+                return False
+        return True
+
+    def _tryAllocate(self):
+        if len(self._vmQueue) == 0:
+            return False
+        vm = self._vmQueue[0]
+        for name, value in vm.resourceRequest.items():
+            if value != float('inf') and \
+               self._machine._resources[name].value < value:
+                   return False
+        now = Simulator.getInstance().time
+        event = VMStart(self._machine, vm)
+        Simulator.getInstance().addEvent(now, event)
+        self._vmQueue.pop(0)
+        return True
+
+    def schedule(self, vm):
+        if not self.isFittable(vm):
+            raise Exception(f"{vm.name} can never be allocated on {self._machine.name}")
+        self._vmQueue += [vm]
+
+    def notify(self, event):
+        if event.name == "SimulationStart":
+            self._tryAllocate()
+        if isinstance(event, VMStart) and \
+           event.host == self._machine:
+            self._tryAllocate()
+        if isinstance(event, VMEnd) and \
+           event.host == self._machine:
+            self._tryAllocate()
+
+
+
 class JobSchedulerSimple(NotificationListener):
     def __init__(self, machine, autofree=False):
         self._machine = machine
@@ -54,10 +99,10 @@ class JobSchedulerSimple(NotificationListener):
         self._jobQueue += [job]
 
     def notify(self, event):
-        if self._autoFreeHost():
-            return
         if isinstance(event, JobFinish) and \
            event.job.machine == self._machine:
+            if self._autoFreeHost():
+                return
             self._tryRunNext()
         if isinstance(event, JobStart) and \
            event.job.machine == self._machine:

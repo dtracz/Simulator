@@ -35,12 +35,15 @@ class Machine:
     Hardware machine, that holds resources and is able
     to run jobs or host virtual machines.
     """
-    def __init__(self, name, resources, SchedulerClass=None):
+    def __init__(self, name, resources,
+                 getJobScheduler=lambda _: None,
+                 getVMScheduler=lambda _: None):
         self.name = name
         self._resources = resources
         self._hostedVMs = set()
         self.jobsRunning = set()
-        self._scheduler = None if SchedulerClass is None else SchedulerClass(self)
+        self._jobScheduler = getJobScheduler(self)
+        self._vmScheduler = getVMScheduler(self)
 
     def allocate(self, job):
         for name in job.resourceRequest.keys():
@@ -50,10 +53,15 @@ class Machine:
         for name in list(job.obtainedRes.keys()):
             self._resources[name].free(job)
 
-    def schedule(self, job):
-        if self._scheduler is None:
-            raise Exception(f"Machine {self.name} has no scheduler")
-        self._scheduler.schedule(job)
+    def scheduleJob(self, job):
+        if self._jobScheduler is None:
+            raise Exception(f"Machine {self.name} has no job scheduler")
+        self._jobScheduler.schedule(job)
+
+    def scheduleVM(self, job):
+        if self._vmScheduler is None:
+            raise Exception(f"Machine {self.name} has no VM scheduler")
+        self._vmScheduler.schedule(job)
 
     def allocateVM(self, vm):
         if vm.host != self and vm.host != None:
@@ -86,8 +94,11 @@ class VirtualMachine(Machine):
     Machine, that could be allocated on other machines,
     ald use part of it's resources to run jobs.
     """
-    def __init__(self, name, resourceRequest=None, SchedulerClass=None, host=None):
-        super().__init__(name, {}, SchedulerClass)
+    def __init__(self, name, resourceRequest=None,
+                 getJobScheduler=lambda _: None,
+                 getVMScheduler=lambda _: None,
+                 host=None):
+        super().__init__(name, {}, getJobScheduler, getVMScheduler)
         self.host = host
         self.resourceRequest = resourceRequest #{name: value}
         self._resources = None
