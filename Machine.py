@@ -39,6 +39,7 @@ class Machine:
         self.name = name
         self._resources = resources
         self._hostedVMs = set()
+        self.jobsRunning = set()
         self._scheduler = None if SchedulerClass is None else SchedulerClass(self)
 
     def allocate(self, job):

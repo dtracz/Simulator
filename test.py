@@ -235,9 +235,10 @@ class SchedulersTests(SimulatorTests):
 
         resourceReq0 = {
             "Core 0": inf, # GHz
-            "RAM"   : 8,   # GB
+            "RAM"   : inf, # GB
         }
-        vm0 = VirtualMachine("vm0", resourceReq0, JobSchedulerSimple)
+        vm0 = VirtualMachine("vm0", resourceReq0,
+                lambda machine: JobSchedulerSimple(machine, autofree=True))
 
         job0 = Job(500, {"Core 0": inf, "RAM": 8}, vm0)
         job1 = Job(1000, {"Core 0": inf, "RAM": 6}, vm0)
@@ -251,6 +252,5 @@ class SchedulersTests(SimulatorTests):
         sim.addEvent(0, VMStart(m0, vm0))
         sim.simulate()
 
-        m0.freeVM(vm0)
         assert sim.time == 250
 

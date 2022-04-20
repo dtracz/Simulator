@@ -44,6 +44,7 @@ class JobFinish(Event):
         self._time = None
 
     def proceed(self):
+        self.job.machine.jobsRunning.remove(self.job)
         self._time = Simulator.getInstance().time
         self.job.freeResources()
 
@@ -69,6 +70,7 @@ class JobStart(Event):
         self.job.update()
 
     def proceed(self):
+        self.job.machine.jobsRunning.add(self.job)
         self.job.allocateResources()
         self.scheduleFinish()
 
