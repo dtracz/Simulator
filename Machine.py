@@ -7,22 +7,22 @@ class Infrastructure:
     """
     __self = None
 
-    def __init__(self, machines, VMAllocatorClass):
+    def __init__(self, machines, getVMPlacementPolicy):
         if Infrastructure.__self != None:
             raise Exception("Creating another instance of Infrastructure is forbidden")
         self.machines = set(machines)
         self._knownVMs = set()
-        self._vmAlocator = VMAllocatorClass(self.machines, self._knownVMs)
+        self._vmPlacementPolicy = getVMPlacementPolicy(self.machines)
         Infrastructure.__self = self
 
     @staticmethod
     def getInstance(*args, **kwargs):
         if Infrastructure.__self == None:
             Infrastructure(*args, **kwargs)
-        return Simulator.__self;
+        return Infrastructure.__self;
 
     def scheduleVM(self, vm):
-        self._vmAllocator.schedule(vm)
+        self._vmPlacementPolicy.placeVM(vm)
 
     def scheduleJob(self, job, vm):
         if vm not in self._knownVMs:
@@ -35,15 +35,19 @@ class Machine:
     Hardware machine, that holds resources and is able
     to run jobs or host virtual machines.
     """
+    _noMachines = 0
+
     def __init__(self, name, resources,
                  getJobScheduler=lambda _: None,
                  getVMScheduler=lambda _: None):
+        self._index = Machine._noMachines
         self.name = name
         self._resources = resources
         self._hostedVMs = set()
         self.jobsRunning = set()
         self._jobScheduler = getJobScheduler(self)
         self._vmScheduler = getVMScheduler(self)
+        Machine._noMachines += 1
 
     def allocate(self, job):
         for name in job.resourceRequest.keys():
@@ -64,7 +68,7 @@ class Machine:
         self._vmScheduler.schedule(job)
 
     def allocateVM(self, vm):
-        if vm.host != self and vm.host != None:
+        if vm.host != self and vm.host is not None:
             raise Exception("Wrong host for given virtual machine")
         if vm in self._hostedVMs:
             raise Exception("This vm is already allocated")
@@ -86,6 +90,17 @@ class Machine:
             self._resources[name].release(resource.value)
         self._hostedVMs.remove(vm)
         vm.host = None
+
+    def __lt__(self, other):
+        return self._index < other._index
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self._index == other._index
+
+    def __hash__(self):
+        return self._index
 
 
 

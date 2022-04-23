@@ -266,7 +266,6 @@ class SchedulersTests(SimulatorTests):
         }
         m0 = Machine("m0", resources, lambda m: None, VMSchedulerSimple)
 
-        vm_id = 0
         def getVM(vm_id):
             resourceReq = {
                 "Core 0": inf, # GHz
@@ -292,4 +291,48 @@ class SchedulersTests(SimulatorTests):
         sim.simulate()
 
         assert sim.time == 1000
+
+
+    def test_placementPolicySimple(self):
+        inf = float('inf')
+        resources = {
+            "Core 0": SharedResource("Core 0", 10), # GHz
+            "RAM"   : Resource("RAM", 8),           # GB
+        }
+        m0 = Machine("m0", resources, lambda m: None, VMSchedulerSimple)
+        resources = {
+            "Core 0": SharedResource("Core 0", 10), # GHz
+            "RAM"   : Resource("RAM", 16),          # GB
+        }
+        m1 = Machine("m1", resources, lambda m: None, VMSchedulerSimple)
+        
+        infrastructure = Infrastructure.getInstance(
+                [m0, m1],
+                VMPlacmentPolicySimple,
+        )
+    
+        def getVM(vm_id, ram, req_jobs):
+            resourceReq = {
+                "Core 0": inf, # GHz
+                "RAM"   : ram, # GB
+            }
+            vm = VirtualMachine(f"vm{vm_id}", resourceReq,
+                    lambda machine: JobSchedulerSimple(machine, autofree=True))
+            jobs = [
+                Job(500, {"Core 0": inf, "RAM": 8}, vm),
+                Job(1000, {"Core 0": inf, "RAM": 6}, vm),
+                Job(1000, {"Core 0": inf, "RAM": 6}, vm),
+            ]
+            for i in req_jobs:
+                vm.scheduleJob(jobs[i])
+            return vm
+
+        infrastructure.scheduleVM(getVM(0, 8, [0]))
+        infrastructure.scheduleVM(getVM(0, 8, [1,2]))
+        infrastructure.scheduleVM(getVM(0, 16, [0,1,2]))
+        infrastructure.scheduleVM(getVM(0, 12, [1,2]))
+
+        sim = Simulator.getInstance()
+        sim.simulate()
+        assert sim.time == 650
 
