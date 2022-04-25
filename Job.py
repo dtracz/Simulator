@@ -1,5 +1,6 @@
 from sortedcontainers import SortedDict
 from Simulator import *
+from Resource import *
 
 
 class Job:
@@ -40,8 +41,8 @@ class Job:
 
     def getCurrentSpeed(self):
         totalFrequency = 0
-        for name, resource in self.obtainedRes.items():
-            if name[:4] == "Core":
+        for rtype, resource in self.obtainedRes.items():
+            if rtype == Resource.Type.CPU_core:
                 totalFrequency += resource.value
         return totalFrequency
 

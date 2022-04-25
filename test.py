@@ -26,14 +26,14 @@ class SimpleTests(SimulatorTests):
  
     def test_1job(self):
         resources = {
-            "Core 0": Resource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 16),    # GB
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),    # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = {
-            "Core 0": 10, # GHz
-            "RAM"   : 5,  # GB
+            Resource.Type.CPU_core: 10, # GHz
+            Resource.Type.RAM     : 5,  # GB
         }
         job0 = Job(100, res0, m0)
 

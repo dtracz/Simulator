@@ -1,15 +1,24 @@
+from enum import Enum
 from Events import *
 
 
 class Resource:
     """
-    Bisic resource class. Represents it's name and values
+    Bisic resource class. Represents it's type and values
     (max possible and current), and provides information about
     all jobs that re using this resource at the moment.
     Provides methonds of allocation and freeing resource.
     """
-    def __init__(self, name, value):
-        self.name = name
+    class Type(Enum):
+        CPU_core = 1
+        RAM = 2
+
+        def __lt__(self, other):
+            return self.value < other.value
+
+
+    def __init__(self, rtype, value):
+        self.rtype = rtype 
         self.value = value
         self.maxValue = value
         self.jobsUsing = set()
@@ -25,7 +34,7 @@ class Resource:
         if value > self.value:
             raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
         self.value -= value
-        return Resource(self.name, value)
+        return Resource(self.rtype, value)
 
     def release(self, value):
         if value == float('inf'):
@@ -36,15 +45,15 @@ class Resource:
             raise RuntimeError("Resource overflow after release")
 
     def allocate(self, job):
-        requestedValue = job.resourceRequest[self.name]
+        requestedValue = job.resourceRequest[self.rtype]
         resource = self.withold(requestedValue)
-        job.obtainedRes[self.name] = resource
+        job.obtainedRes[self.rtype] = resource
         self.jobsUsing.add(job)
 
     def free(self, job):
-        resource = job.obtainedRes[self.name]
+        resource = job.obtainedRes[self.rtype]
         self.release(resource.value)
-        del job.obtainedRes[self.name]
+        del job.obtainedRes[self.rtype]
         self.jobsUsing.remove(job)
 
 
@@ -75,21 +84,21 @@ class SharedResource(Resource):
             Simulator.getInstance().addEvent(now, jobRecalculate)
 
     def allocate(self, job):
-        requestedValue = job.resourceRequest[self.name]
+        requestedValue = job.resourceRequest[self.rtype]
         if requestedValue != float('inf'):
             return super().allocate(job)
         self.jobsUsing.add(job)
         self.value = self.maxValue / len(self.jobsUsing)
-        job.obtainedRes[self.name] = self
+        job.obtainedRes[self.rtype] = self
         self.recalculateJobs([job])
 
     def free(self, job):
-        resource = job.obtainedRes[self.name]
+        resource = job.obtainedRes[self.rtype]
         self.jobsUsing.remove(job)
         if len(self.jobsUsing) > 0:
             self.value = self.maxValue / len(self.jobsUsing)
         else:
             self.value = self.maxValue
-        del job.obtainedRes[self.name]
+        del job.obtainedRes[self.rtype]
         self.recalculateJobs([job])
 

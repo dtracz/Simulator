@@ -9,7 +9,7 @@ class MultiDictRevDict:
     """
     def __init__(self):
         self._fwdDict = SortedDict()
-        self._revDict = SortedDict()
+        self._revDict = {}
     
     def add(self, key, val):
         if val in self._revDict.keys():
@@ -38,6 +38,12 @@ class MultiDictRevDict:
         val = vals[0]
         self.remove(val)
         return (key, val)
+
+    def atFirst(self, key):
+        return self._fwdDict[key][0]
+
+    def atLast(self, key):
+        return self._fwdDict[key][-1]
 
     def getkey(self, val):
         return self._revDict[val]
