@@ -94,20 +94,20 @@ class SimpleTests(SimulatorTests):
 
     def test_ramFailure(self):
         resources = {
-            "Core 0": Resource("Core 0", 10), # GHz
-            "Core 1": Resource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 16),    # GB
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),      # GB
         }
         m0 = Machine("m0", resources)
 
-        res0 = {
-            "Core 0": 10, # GHz
-            "RAM"   : 10, # GB
-        }
-        res1 = {
-            "Core 1": 10, # GHz
-            "RAM"   : 8,  # GB
-        }
+        res0 = [
+            (Resource.Type.CPU_core, 10), # GHz
+            (Resource.Type.RAM,      10),  # GB
+        ]
+        res1 = [
+            (Resource.Type.CPU_core, 10), # GHz
+            (Resource.Type.RAM,      8),  # GB
+        ]
         job0 = Job(650, res0, m0)
         job1 = Job(450, res1, m0)
 
