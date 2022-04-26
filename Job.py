@@ -8,11 +8,12 @@ class Job:
     Job structure. Contains all information about job
     and provides mothods of it's procedure and maintenance.
     """
-    _index = 0
+    _noCreated = 0
 
     def __init__(self, operations, resourceRequest=None, machine=None, name=None):
+        self._index = Job._noCreated
         if (name is None):
-            name = f"Job_{Job._index}"
+            name = f"Job_{self._index}"
         self.name = name
         self.machine = machine
         self.operations = operations
@@ -20,8 +21,8 @@ class Job:
         self.resourceRequest = resourceRequest #{name: value}
         self.obtainedRes = {}
         self.predictedFinish = None
-        Job._index += 1
         self._updates = [] # [(time, speed)]
+        Job._noCreated += 1
 
     def asignMachine(self, machine):
         self.machine = machine

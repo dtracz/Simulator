@@ -56,6 +56,14 @@ class Resource:
         del job.obtainedRes[self.rtype]
         self.jobsUsing.remove(job)
 
+    def __lt__(self, other):
+        if self.rtype != other.rtype:
+            return self.rtype < other.rtype
+        return self.value < other.value
+
+    def __hash__(self):
+        return id(self)
+
 
 
 class SharedResource(Resource):

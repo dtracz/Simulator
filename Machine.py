@@ -59,12 +59,13 @@ class Machine:
         return resources
 
     def allocate(self, job):
-        for name in job.resourceRequest.keys():
-            self._resources.atLast(name).allocate(job)
+        for rtype in job.resourceRequest.keys():
+            self._resources.atMax(rtype).allocate(job)
 
     def free(self, job):
-        for name in list(job.obtainedRes.keys()):
-            self._resources.atLast(name).free(job)
+        for rtype, resource in self._resources:
+            if job in resource.jobsUsing:
+                resource.free(job)
 
     def scheduleJob(self, job):
         if self._jobScheduler is None:

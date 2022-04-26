@@ -46,19 +46,20 @@ class SimpleTests(SimulatorTests):
 
     def test_2jobs2cores(self):
         resources = {
-            "Core 0": Resource("Core 0", 10), # GHz
-            "Core 1": Resource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 16),    # GB
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),    # GB
         }
+        print("len", len(resources))
         m0 = Machine("m0", resources)
 
         res0 = {
-            "Core 0": 10, # GHz
-            "RAM"   : 5,  # GB
+            Resource.Type.CPU_core: 10, # GHz
+            Resource.Type.RAM     : 5,  # GB
         }
         res1 = {
-            "Core 1": 10, # GHz
-            "RAM"   : 8,  # GB
+            Resource.Type.CPU_core: 10, # GHz
+            Resource.Type.RAM     : 8,  # GB
         }
         job0 = Job(650, res0, m0)
         job1 = Job(450, res1, m0)

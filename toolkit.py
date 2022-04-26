@@ -58,11 +58,9 @@ class MultiDictRevDict:
         self.remove(val)
         return (key, val)
 
-    def atFirst(self, key):
-        return self._fwdDict[key][0]
-
-    def atLast(self, key):
-        return self._fwdDict[key][-1]
+    def atMax(self, key):
+        sset = self._fwdDict[key]
+        return max(sset, key=lambda x: x.value)
 
     def __iter__(self):
         outerIter = iter(self._fwdDict.items())
