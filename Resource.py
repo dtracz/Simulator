@@ -44,16 +44,15 @@ class Resource:
         else:
             raise RuntimeError("Resource overflow after release")
 
-    def allocate(self, job):
-        requestedValue = job.resourceRequest[self.rtype]
+    def allocate(self, requestedValue, job):
         resource = self.withold(requestedValue)
-        job.obtainedRes[self.rtype] = resource
+        job.obtainedRes[id(self)] = resource
         self.jobsUsing.add(job)
 
     def free(self, job):
-        resource = job.obtainedRes[self.rtype]
+        resource = job.obtainedRes[id(self)]
         self.release(resource.value)
-        del job.obtainedRes[self.rtype]
+        del job.obtainedRes[id(self)]
         self.jobsUsing.remove(job)
 
     def __lt__(self, other):

@@ -31,10 +31,10 @@ class SimpleTests(SimulatorTests):
         }
         m0 = Machine("m0", resources)
 
-        res0 = {
-            Resource.Type.CPU_core: 10, # GHz
-            Resource.Type.RAM     : 5,  # GB
-        }
+        res0 = [
+            (Resource.Type.CPU_core, 10), # GHz
+            (Resource.Type.RAM,      5),  # GB
+        ]
         job0 = Job(100, res0, m0)
 
         sim = Simulator.getInstance()
@@ -48,19 +48,18 @@ class SimpleTests(SimulatorTests):
         resources = {
             Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.CPU_core, 10), # GHz
-            Resource(Resource.Type.RAM, 16),    # GB
+            Resource(Resource.Type.RAM, 16),      # GB
         }
-        print("len", len(resources))
         m0 = Machine("m0", resources)
 
-        res0 = {
-            Resource.Type.CPU_core: 10, # GHz
-            Resource.Type.RAM     : 5,  # GB
-        }
-        res1 = {
-            Resource.Type.CPU_core: 10, # GHz
-            Resource.Type.RAM     : 8,  # GB
-        }
+        res0 = [
+            (Resource.Type.CPU_core, 10), # GHz
+            (Resource.Type.RAM,      5),  # GB
+        ]
+        res1 = [
+            (Resource.Type.CPU_core, 10), # GHz
+            (Resource.Type.RAM,      8),  # GB
+        ]
         job0 = Job(650, res0, m0)
         job1 = Job(450, res1, m0)
 
@@ -70,6 +69,27 @@ class SimpleTests(SimulatorTests):
 
         sim.simulate()
         assert sim.time == 65
+
+    def test_1job2cores(self):
+        resources = {
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 5),  # GHz
+            Resource(Resource.Type.RAM, 16),      # GB
+        }
+        m0 = Machine("m0", resources)
+
+        res0 = [
+            (Resource.Type.CPU_core, 10), # GHz
+            (Resource.Type.CPU_core, 5),  # GHz
+            (Resource.Type.RAM,      5),  # GB
+        ]
+        job0 = Job(150, res0, m0)
+
+        sim = Simulator.getInstance()
+        sim.addEvent(0, JobStart(job0))
+
+        sim.simulate()
+        assert sim.time == 10
 
 
     def test_ramFailure(self):

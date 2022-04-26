@@ -18,7 +18,7 @@ class Job:
         self.machine = machine
         self.operations = operations
         self.operationsLeft = operations
-        self.resourceRequest = resourceRequest #{name: value}
+        self.resourceRequest = resourceRequest # {name: value}
         self.obtainedRes = {}
         self.predictedFinish = None
         self._updates = [] # [(time, speed)]
@@ -42,8 +42,8 @@ class Job:
 
     def getCurrentSpeed(self):
         totalFrequency = 0
-        for rtype, resource in self.obtainedRes.items():
-            if rtype == Resource.Type.CPU_core:
+        for resource in self.obtainedRes.values():
+            if resource.rtype == Resource.Type.CPU_core:
                 totalFrequency += resource.value
         return totalFrequency
 

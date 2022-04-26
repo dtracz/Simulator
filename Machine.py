@@ -59,8 +59,8 @@ class Machine:
         return resources
 
     def allocate(self, job):
-        for rtype in job.resourceRequest.keys():
-            self._resources.atMax(rtype).allocate(job)
+        for rtype, value in job.resourceRequest:
+            self._resources.atMax(rtype).allocate(value, job)
 
     def free(self, job):
         for rtype, resource in self._resources:
