@@ -90,22 +90,21 @@ class SharedResource(Resource):
             jobRecalculate = JobRecalculate(job)
             Simulator.getInstance().addEvent(now, jobRecalculate)
 
-    def allocate(self, job):
-        requestedValue = job.resourceRequest[self.rtype]
+    def allocate(self, requestedValue, job):
         if requestedValue != float('inf'):
-            return super().allocate(job)
+            return super().allocate(requestedValue, job)
         self.jobsUsing.add(job)
         self.value = self.maxValue / len(self.jobsUsing)
-        job.obtainedRes[self.rtype] = self
+        job.obtainedRes[id(self)] = self
         self.recalculateJobs([job])
 
     def free(self, job):
-        resource = job.obtainedRes[self.rtype]
+        resource = job.obtainedRes[id(self)]
         self.jobsUsing.remove(job)
         if len(self.jobsUsing) > 0:
             self.value = self.maxValue / len(self.jobsUsing)
         else:
             self.value = self.maxValue
-        del job.obtainedRes[self.rtype]
+        del job.obtainedRes[id(self)]
         self.recalculateJobs([job])
 

@@ -129,19 +129,19 @@ class SharedResourceTests(SimulatorTests):
     def test_1coreSimple(self):
         inf = float('inf')
         resources = {
-            "Core 0": SharedResource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 16),          # GB
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)
 
-        res0 = {
-            "Core 0": inf, # GHz
-            "RAM"   : 5,   # GB
-        }
-        res1 = {
-            "Core 0": inf, # GHz
-            "RAM"   : 8,   # GB
-        }
+        res0 = [
+            (Resource.Type.CPU_core, inf), # GHz
+            (Resource.Type.RAM,      5),   # GB
+        ]
+        res1 = [
+            (Resource.Type.CPU_core, inf), # GHz
+            (Resource.Type.RAM,      8),   # GB
+        ]
         job0 = Job(200, res0, m0)
         job1 = Job(200, res1, m0)
 
@@ -156,21 +156,21 @@ class SharedResourceTests(SimulatorTests):
     def test_1vs2(self):
         inf = float('inf')
         resources = {
-            "Core 0": SharedResource("Core 0", 10), # GHz
-            "Core 1": SharedResource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 16),          # GB
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)
 
-        res0 = {
-            "Core 0": inf, # GHz
-            "Core 1": inf, # GHz
-            "RAM"   : 5,   # GB
-        }
-        res1 = {
-            "Core 1": inf, # GHz
-            "RAM"   : 8,   # GB
-        }
+        res0 = [
+            (Resource.Type.CPU_core, inf), # GHz
+            (Resource.Type.CPU_core, inf), # GHz
+            (Resource.Type.RAM,      5),   # GB
+        ]
+        res1 = [
+            (Resource.Type.CPU_core, inf), # GHz
+            (Resource.Type.RAM,      8),   # GB
+        ]
         job0 = Job(600, res0, m0)
         job1 = Job(400, res1, m0)
 
