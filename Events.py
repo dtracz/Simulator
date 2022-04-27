@@ -13,6 +13,7 @@ class JobFinish(Event):
         self._time = None
 
     def proceed(self):
+        self.job.registerProgress()
         self.job.machine.jobsRunning.remove(self.job)
         self._time = Simulator.getInstance().time
         self.job.freeResources()

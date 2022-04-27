@@ -36,13 +36,12 @@ class Resource:
         self.value -= value
         return Resource(self.rtype, value)
 
-    def release(self, value):
-        if value == float('inf'):
+    def release(self, resource):
+        if resource.value == float('inf'):
             self.value = self.maxValue
-        elif self.value + value <= self.maxValue:
-            self.value += value
-        else:
+        elif self.value + resource.value > self.maxValue:
             raise RuntimeError("Resource overflow after release")
+        self.value += resource.value
 
     def allocate(self, requestedValue, job):
         resource = self.withold(requestedValue)
@@ -51,7 +50,7 @@ class Resource:
 
     def free(self, job):
         resource = job.obtainedRes[id(self)]
-        self.release(resource.value)
+        self.release(resource)
         del job.obtainedRes[id(self)]
         self.jobsUsing.remove(job)
 
@@ -73,38 +72,37 @@ class SharedResource(Resource):
     from 1/n of it's value. If job starts of finishes to use SharedResource,
     all other using it at the moment are recalculated.
     """
+
+    def __init__(self, rtype, value):
+        super().__init__(rtype, value)
+        self.tmpMaxValue = value
+
     def withold(self, value):
-        if value != self.maxValue and value != float('inf'):
-            raise Exception("SharedResource cannot be partially obtained")
-        return self
+        if value == float('inf'):
+            self.value = self.tmpMaxValue / (len(self.jobsUsing) + 1)
+            resource = self
+        elif value > self.tmpMaxValue:
+            raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
+        else:
+            self.tmpMaxValue -= value
+            resources = Resource(self.rtype, value)
+        self.recalculateJobs()
+        return resource
 
-    def release(self, value):
-        if value != self.maxValue and value != float('inf'):
-            raise Exception("SharedResource cannot be partially freed")
+    def release(self, resource):
+        if resource is self:
+            self.value = self.tmpMaxValue / max(1, len(self.jobsUsing) - 1)
+        elif self.tmpMaxValue + resource.value > self.maxValue:
+            raise RuntimeError("Resource overflow after release")
+        else:
+            self.tmpMaxValue += resource.value
+        self.recalculateJobs()
 
-    def recalculateJobs(self, excluded=[]):
+    def recalculateJobs(self):
         now = Simulator.getInstance().time
         for job in self.jobsUsing:
-            if job in excluded:
+            if job.operationsLeft == 0:
                 continue
             jobRecalculate = JobRecalculate(job)
             Simulator.getInstance().addEvent(now, jobRecalculate)
-
-    def allocate(self, requestedValue, job):
-        if requestedValue != float('inf'):
-            return super().allocate(requestedValue, job)
-        self.jobsUsing.add(job)
-        self.value = self.maxValue / len(self.jobsUsing)
-        job.obtainedRes[id(self)] = self
-        self.recalculateJobs([job])
-
-    def free(self, job):
-        resource = job.obtainedRes[id(self)]
-        self.jobsUsing.remove(job)
-        if len(self.jobsUsing) > 0:
-            self.value = self.maxValue / len(self.jobsUsing)
-        else:
-            self.value = self.maxValue
-        del job.obtainedRes[id(self)]
-        self.recalculateJobs([job])
 
