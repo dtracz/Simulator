@@ -61,11 +61,13 @@ class Machine:
     def allocate(self, job):
         for rtype, value in job.resourceRequest:
             self._resources.atMax(rtype).allocate(value, job)
+        self.jobsRunning.add(job)
 
     def free(self, job):
         for rtype, resource in self._resources:
             if job in resource.jobsUsing:
                 resource.free(job)
+        self.jobsRunning.remove(job)
 
     def scheduleJob(self, job):
         if self._jobScheduler is None:

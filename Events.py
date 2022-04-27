@@ -13,9 +13,8 @@ class JobFinish(Event):
         self._time = None
 
     def proceed(self):
-        self.job.registerProgress()
-        self.job.machine.jobsRunning.remove(self.job)
         self._time = Simulator.getInstance().time
+        self.job.registerProgress()
         self.job.freeResources()
 
 
@@ -31,7 +30,6 @@ class JobStart(Event):
         self._time = None
 
     def scheduleFinish(self):
-        self._time = Simulator.getInstance().time
         execTime = self.job.calculateExecTime()
         endTime = self._time + execTime
         jobFinish = JobFinish(self.job)
@@ -40,7 +38,7 @@ class JobStart(Event):
         self.job.update()
 
     def proceed(self):
-        self.job.machine.jobsRunning.add(self.job)
+        self._time = Simulator.getInstance().time
         self.job.allocateResources()
         self.scheduleFinish()
 
