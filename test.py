@@ -7,6 +7,28 @@ from Job import *
 from Schedulers import *
  
 
+class EventInspector(NotificationListener):
+    def __init__(self, expected=[]):
+        self._expectations = []
+        for time, name in expected:
+            self.addExpected(time, name)
+
+    def addExpected(self, time, name):
+        self._expectations += [
+            lambda e: e.name == name and \
+                      Simulator.getInstance().time == time,
+        ]
+
+    def notify(self, event):
+        for i, f in enumerate(self._expectations):
+            if f(event):
+                del self._expectations[i]
+                break
+
+    def verify(self):
+        assert 0 == len(self._expectations)
+
+
 
 class SimulatorTests(TestCase):
 
