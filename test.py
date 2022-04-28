@@ -204,6 +204,47 @@ class SharedResourceTests(SimulatorTests):
         assert sim.time == 65
 
 
+    def test_witholdFromShared(self):
+        inf = float('inf')
+        resources = {
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
+        }
+        m0 = Machine("m0", resources)
+
+        res0 = [
+            (Resource.Type.CPU_core, 2),   # GHz
+            (Resource.Type.RAM,      5),   # GB
+        ]
+        res1 = [
+            (Resource.Type.CPU_core, inf), # GHz
+            (Resource.Type.RAM,      5),   # GB
+        ]
+        res2 = [
+            (Resource.Type.CPU_core, inf), # GHz
+            (Resource.Type.RAM,      5),   # GB
+        ]
+        job0 = Job(20, res0, m0)
+        job1 = Job(40, res1, m0)
+        job2 = Job(50, res2, m0)
+
+        sim = Simulator.getInstance()
+        sim.addEvent(0, JobStart(job0))
+        sim.addEvent(5, JobStart(job1))
+        sim.addEvent(5, JobStart(job2))
+
+        inspector = EventInspector([
+            (0, "JobStart_Job_0"),
+            (5, "JobStart_Job_1"),
+            (5, "JobStart_Job_2"),
+            (10, "JobFinish_Job_0"),
+            (14, "JobFinish_Job_1"),
+            (15, "JobFinish_Job_2"),
+        ])
+        sim.simulate()
+        inspector.verify()
+
+
 
 class VirtualizationTests(SimulatorTests):
 
