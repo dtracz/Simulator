@@ -77,25 +77,34 @@ class SharedResource(Resource):
         super().__init__(rtype, value)
         self.tmpMaxValue = value
 
+    @property
+    def noDynamicJobs(self):
+        noDynamic = 0
+        for job in self.jobsUsing:
+            noDynamic += job.obtainedRes[id(self)] is self
+        return noDynamic
+
     def withold(self, value):
+        resource = None
         if value == float('inf'):
-            self.value = self.tmpMaxValue / (len(self.jobsUsing) + 1)
+            self.value = self.tmpMaxValue / (self.noDynamicJobs + 1)
             resource = self
         elif value > self.tmpMaxValue:
             raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
         else:
             self.tmpMaxValue -= value
-            resources = Resource(self.rtype, value)
+            resource = Resource(self.rtype, value)
         self.recalculateJobs()
         return resource
 
     def release(self, resource):
         if resource is self:
-            self.value = self.tmpMaxValue / max(1, len(self.jobsUsing) - 1)
+            self.value = self.tmpMaxValue / max(1, self.noDynamicJobs - 1)
         elif self.tmpMaxValue + resource.value > self.maxValue:
             raise RuntimeError("Resource overflow after release")
         else:
             self.tmpMaxValue += resource.value
+            self.value = self.tmpMaxValue / self.noDynamicJobs
         self.recalculateJobs()
 
     def recalculateJobs(self):
