@@ -62,6 +62,9 @@ class MultiDictRevDict:
         sset = self._fwdDict[key]
         return max(sset, key=lambda x: x.value)
 
+    def getAll(self, key):
+        return self._fwdDict[key]
+
     def __iter__(self):
         outerIter = iter(self._fwdDict.items())
         return MultiDictRevDict.ItemsIterator(outerIter)

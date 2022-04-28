@@ -33,6 +33,9 @@ class EventInspector(NotificationListener):
 class SimulatorTests(TestCase):
 
     def setUp(self):
+        Event._noCreated = 0
+        Job._noCreated = 0
+        Machine._noCreated = 0
         sim = Simulator.getInstance()
         assert sim.time == 0
         assert len(sim._eventQueue._todo) == 1
@@ -141,7 +144,8 @@ class SimpleTests(SimulatorTests):
         try:
             sim.simulate()
         except RuntimeError as e:
-            cought = e.args[0] == 'Requested 8 out of 6 avaliable'
+            cought = e.args[0] == "Requested 8 out of 6 avaliable" or \
+                     e.args[0] == "Cannot find fitting Type.RAM"
         assert cought
 
 

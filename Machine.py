@@ -37,19 +37,19 @@ class Machine:
     Hardware machine, that holds resources and is able
     to run jobs or host virtual machines.
     """
-    _noMachines = 0
+    _noCreated = 0
 
     def __init__(self, name, resources,
                  getJobScheduler=lambda _: None,
                  getVMScheduler=lambda _: None):
-        self._index = Machine._noMachines
+        self._index = Machine._noCreated
         self.name = name
         self._resources = self.makeResources(resources)
         self._hostedVMs = set()
         self.jobsRunning = set()
         self._jobScheduler = getJobScheduler(self)
         self._vmScheduler = getVMScheduler(self)
-        Machine._noMachines += 1
+        Machine._noCreated += 1
 
     @staticmethod
     def makeResources(resIterable):
@@ -58,9 +58,32 @@ class Machine:
             resources.add(resource.rtype, resource)
         return resources
 
+    def getBestFitting(self, rtype, value):
+        allRes = self._resources.getAll(rtype)
+        sharedRes = []
+        nonSharedRes = []
+        for res in allRes:
+            if isinstance(res, SharedResource):
+                sharedRes += [res]
+            else:
+                nonSharedRes += [res]
+        if value == float('inf'):
+            if len(sharedRes) > 0:
+                return max(sharedRes, key=lambda r: r.value)
+            else:
+                return max(nonSharedRes, key=lambda r: r.value)
+        sharedRes.sort(key=lambda r: r.value)
+        for res in nonSharedRes:
+            if res.value >= value:
+                return res
+        if len(sharedRes) > 0:
+            return max(sharedRes, key=lambda r: r.tmpMaxValue)
+        raise RuntimeError(f"Cannot find fitting {rtype}")
+
     def allocate(self, job):
         for rtype, value in job.resourceRequest:
-            self._resources.atMax(rtype).allocate(value, job)
+            resource = self.getBestFitting(rtype, value)
+            resource.allocate(value, job)
         self.jobsRunning.add(job)
 
     def free(self, job):
