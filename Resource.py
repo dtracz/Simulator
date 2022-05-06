@@ -2,6 +2,15 @@ from enum import Enum
 from Events import *
 
 
+class ResourceRequest:
+    def __init__(self, rtype, value, fromSpecific=None, shared=False):
+        self.rtype = rtype
+        self.value = value
+        self.fromSpecific = fromSpecific
+        self.shared = shared
+
+
+
 class Resource:
     """
     Bisic resource class. Represents it's type and values
