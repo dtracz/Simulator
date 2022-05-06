@@ -124,3 +124,20 @@ class SharedResource(Resource):
             jobRecalculate = JobRecalculate(job)
             Simulator.getInstance().addEvent(now, jobRecalculate)
 
+
+
+def makeShared(resource):
+    if isinstance(resource, SharedResource):
+        return resource
+    if len(resource.jobsUsing) > 0 or \
+       len(resource.vmsUsing) > 0:
+        raise Exception("Resource already used and thus cannot be converted")
+    return SharedResource(resource.rtype, resource.value)
+
+
+def makeNonShared(resource):
+    if len(resource.jobsUsing) > 0 or \
+       len(resource.vmsUsing) > 0:
+        raise Exception("Resource already used and thus cannot be converted")
+    return Resource(resource.rtype, resource.value)
+
