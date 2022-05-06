@@ -255,29 +255,24 @@ class VirtualizationTests(SimulatorTests):
     def test_allocateVM(self):
         inf = float('inf')
         resources = {
-            "Core 0": SharedResource("Core 0", 10), # GHz
-            "Core 1": SharedResource("Core 1", 10), # GHz
-            "RAM"   : Resource("RAM", 16),          # GB
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)
         resourceReq0 = {
-            "Core 0": inf, # GHz
-            "Core 1": inf, # GHz
-            "RAM"   : 10,  # GB
+            ResourceRequest(Resource.Type.CPU_core, inf),
+            ResourceRequest(Resource.Type.CPU_core, inf),
+            ResourceRequest(Resource.Type.RAM, 5),
         }
         vm0 = VirtualMachine("vm0", resourceReq0)
         m0.allocateVM(vm0)
-        assert m0._resources["Core 0"].value == 10
-        assert m0._resources["Core 1"].value == 10
-        assert m0._resources["RAM"].value == 6
-        assert vm0._resources["Core 0"].value == 10
-        assert vm0._resources["Core 1"].value == 10
-        assert vm0._resources["RAM"].value == 10
-        m0.freeVM(vm0)
-        assert m0._resources["Core 0"].value == 10
-        assert m0._resources["Core 1"].value == 10
-        assert m0._resources["RAM"].value == 16
-        assert len(vm0._resources) == 0
+        assert m0._resources.getAll(Resource.Type.CPU_core)[0].avaliableValue == 0
+        assert m0._resources.getAll(Resource.Type.CPU_core)[1].avaliableValue == 0
+        assert m0._resources.getAll(Resource.Type.RAM)[0].avaliableValue == 11
+        assert vm0._resources.getAll(Resource.Type.CPU_core)[0].maxValue == 10
+        assert vm0._resources.getAll(Resource.Type.CPU_core)[1].maxValue == 10
+        assert vm0._resources.getAll(Resource.Type.RAM)[0].maxValue == 5
 
 
     def test_2jobsOn2VMs(self):
