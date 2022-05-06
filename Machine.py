@@ -58,20 +58,22 @@ class Machine:
             resources.add(resource.rtype, resource)
         return resources
 
-    def getBestFitting(self, rtype, value):
+    def getBestFitting(self, rtype, value, excluded=[]):
         allRes = self._resources.getAll(rtype)
         sharedRes = []
         nonSharedRes = []
         for res in allRes:
+            if res in excluded:
+                continue
             if isinstance(res, SharedResource):
                 sharedRes += [res]
             else:
                 nonSharedRes += [res]
         if value == float('inf'):
             if len(sharedRes) > 0:
-                return max(sharedRes, key=lambda r: r.value)
+                return max(sharedRes, key=lambda r: r.maxValue/(1 + len(r.jobsUsing)))
             else:
-                return max(nonSharedRes, key=lambda r: r.value)
+                return max(nonSharedRes, key=lambda r: r.maxValue/(1 + len(r.jobsUsing)))
         sharedRes.sort(key=lambda r: r.value)
         for res in nonSharedRes:
             if res.value >= value:
@@ -101,22 +103,36 @@ class Machine:
     #      if self._vmScheduler is None:
     #          raise Exception(f"Machine {self.name} has no VM scheduler")
     #      self._vmScheduler.schedule(job)
-    #
-    #  def allocateVM(self, vm):
-    #      if vm.host != self and vm.host is not None:
-    #          raise Exception("Wrong host for given virtual machine")
-    #      if vm in self._hostedVMs:
-    #          raise Exception("This vm is already allocated")
-    #      resources = {}
-    #      for name, value in vm.resourceRequest.items():
-    #          if name not in self._resources:
-    #              raise IndexError(f"Machine {self.name} does not have"
-    #                                "requested resource ({name})")
-    #          resources[name] = self._resources[name].withold(value)
-    #      vm.host = self
-    #      vm.setResources(resources)
-    #      self._hostedVMs.add(vm)
-    #
+
+    def allocateVM(self, vm):
+        if vm.host != self and vm.host is not None:
+            raise Exception("Wrong host for given virtual machine")
+        if vm in self._hostedVMs:
+            raise Exception("This vm is already allocated")
+        resources = MultiDictRevDict()
+        usedRes = []
+        for req in vm.resourceRequest:
+            if req.fromSpecific != None:
+                if not self._resources.hasValue(req.fromSpecific):
+                    raise Exception(f"Machine {self.name} does not have specific ")
+                if len(req.fromSpecific.jobsUsing) > 0:
+                    raise Exception(f"Resource {req.fromSpecific} is already used by some jobs")
+                if len(req.fromSpecific.vmsUsing) > 0:
+                    raise Exception(f"Resource {req.fromSpecific} is already used by some vms")
+                srcRes = req.fromSpecific
+            else:
+                srcRes = self.getBestFitting(req.rtype, req.value, excluded=usedRes)
+            if req.value == float('inf') and req.shared is False:
+                req.value = srcRes.avaliableValue
+            dstRes = srcRes.withold(req.value)
+            usedRes += [srcRes]
+            dstRes = makeShared(dstRes) if req.shared else makeNonShared(dstRes)
+            srcRes.vmsUsing.add(vm)
+            resources.add(dstRes.rtype, dstRes)
+        vm.host = self
+        vm.setResources(resources)
+        self._hostedVMs.add(vm)
+
     #  def freeVM(self, vm):
     #      if vm not in self._hostedVMs:
     #          raise Exception("This vm is allocated on a different machine")
@@ -139,25 +155,25 @@ class Machine:
 
 
 
-#  class VirtualMachine(Machine):
-#      """
-#      Machine, that could be allocated on other machines,
-#      ald use part of it's resources to run jobs.
-#      """
-#      def __init__(self, name, resourceRequest=None,
-#                   getJobScheduler=lambda _: None,
-#                   getVMScheduler=lambda _: None,
-#                   host=None):
-#          super().__init__(name, {}, getJobScheduler, getVMScheduler)
-#          self.host = host
-#          self.resourceRequest = resourceRequest #{name: value}
-#          self._resources = None
-#
-#      def setResources(self, resources):
-#          self._resources = resources
-#
-#      def unsetResources(self):
-#          resources = self._resources
-#          self._resources = {}
-#          return resources
+class VirtualMachine(Machine):
+    """
+    Machine, that could be allocated on other machines,
+    ald use part of it's resources to run jobs.
+    """
+    def __init__(self, name, resourceRequest=None,
+                 getJobScheduler=lambda _: None,
+                 getVMScheduler=lambda _: None,
+                 host=None):
+        super().__init__(name, {}, getJobScheduler, getVMScheduler)
+        self.host = host
+        self.resourceRequest = resourceRequest #{name: value}
+        self._resources = None
+
+    def setResources(self, resources):
+        self._resources = resources
+
+    def unsetResources(self):
+        resources = self._resources
+        self._resources = {}
+        return resources
 

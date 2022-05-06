@@ -31,6 +31,11 @@ class Resource:
         self.value = value
         self.maxValue = value
         self.jobsUsing = set()
+        self.vmsUsing = set()
+
+    @property
+    def avaliableValue(self):
+        return self.value
 
     def withold(self, value):
         """
@@ -87,6 +92,10 @@ class SharedResource(Resource):
         self.tmpMaxValue = value
 
     @property
+    def avaliableValue(self):
+        return self.tmpMaxValue
+
+    @property
     def noDynamicJobs(self):
         noDynamic = 0
         for job in self.jobsUsing:
@@ -98,10 +107,10 @@ class SharedResource(Resource):
         if value == float('inf'):
             self.value = self.tmpMaxValue / (self.noDynamicJobs + 1)
             resource = self
-        elif value > self.tmpMaxValue:
-            raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
+        elif value > self.tmpMaxValue: raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
         else:
             self.tmpMaxValue -= value
+            self.value = self.tmpMaxValue / max(self.noDynamicJobs, 1)
             resource = Resource(self.rtype, value)
         self.recalculateJobs()
         return resource

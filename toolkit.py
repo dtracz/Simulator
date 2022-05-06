@@ -69,6 +69,9 @@ class MultiDictRevDict:
         outerIter = iter(self._fwdDict.items())
         return MultiDictRevDict.ItemsIterator(outerIter)
 
+    def hasValue(self, val):
+        return val in self._revDict
+
     def getkey(self, val):
         return self._revDict[val]
 
