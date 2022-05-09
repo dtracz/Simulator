@@ -122,7 +122,7 @@ class SharedResource(Resource):
             raise RuntimeError("Resource overflow after release")
         else:
             self.tmpMaxValue += resource.value
-            self.value = self.tmpMaxValue / self.noDynamicJobs
+            self.value = self.tmpMaxValue / max(self.noDynamicJobs, 1)
         self.recalculateJobs()
 
     def recalculateJobs(self):
