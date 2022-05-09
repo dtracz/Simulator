@@ -274,6 +274,29 @@ class VirtualizationTests(SimulatorTests):
         assert vm0._resources.getAll(Resource.Type.CPU_core)[1].maxValue == 10
         assert vm0._resources.getAll(Resource.Type.RAM)[0].maxValue == 5
 
+    def test_freeVM(self):
+        inf = float('inf')
+        resources = {
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
+        }
+        m0 = Machine("m0", resources)
+        resourceReq0 = {
+            ResourceRequest(Resource.Type.CPU_core, inf),
+            ResourceRequest(Resource.Type.CPU_core, inf),
+            ResourceRequest(Resource.Type.RAM, 5),
+        }
+        vm0 = VirtualMachine("vm0", resourceReq0)
+        m0.allocateVM(vm0)
+        m0.freeVM(vm0)
+        assert m0._resources.getAll(Resource.Type.CPU_core)[0].avaliableValue == 10
+        assert isinstance(m0._resources.getAll(Resource.Type.CPU_core)[0], SharedResource)
+        assert m0._resources.getAll(Resource.Type.CPU_core)[1].avaliableValue == 10
+        assert isinstance(m0._resources.getAll(Resource.Type.CPU_core)[1], SharedResource)
+        assert m0._resources.getAll(Resource.Type.RAM)[0].avaliableValue == 16
+        assert 0 == len(vm0._resources)
+
 
     def test_2jobsOn2VMs(self):
         inf = float('inf')
@@ -388,12 +411,12 @@ class SchedulersTests(SimulatorTests):
             "RAM"   : Resource("RAM", 16),          # GB
         }
         m1 = Machine("m1", resources, lambda m: None, VMSchedulerSimple)
-        
+
         infrastructure = Infrastructure.getInstance(
                 [m0, m1],
                 VMPlacmentPolicySimple,
         )
-    
+
         def getVM(vm_id, ram, req_jobs):
             resourceReq = {
                 "Core 0": inf, # GHz
