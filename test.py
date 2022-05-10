@@ -374,22 +374,22 @@ class SchedulersTests(SimulatorTests):
     def test_vmSchedulerSimple(self):
         inf = float('inf')
         resources = {
-            "Core 0": SharedResource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 16),          # GB
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources, lambda m: None, VMSchedulerSimple)
 
         def getVM(vm_id):
             resourceReq = {
-                "Core 0": inf, # GHz
-                "RAM"   : 8, # GB
+                ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
+                ResourceRequest(Resource.Type.RAM, 8),
             }
 
             vm = VirtualMachine(f"vm{vm_id}", resourceReq,
                     lambda machine: JobSchedulerSimple(machine, autofree=True))
-            job0 = Job(500, {"Core 0": inf, "RAM": 8}, vm)
-            job1 = Job(1000, {"Core 0": inf, "RAM": 6}, vm)
-            job2 = Job(1000, {"Core 0": inf, "RAM": 6}, vm)
+            job0 = Job(500,  [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 8)], vm)
+            job1 = Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm)
+            job2 = Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm)
             vm.scheduleJob(job0)
             vm.scheduleJob(job1)
             vm.scheduleJob(job2)
@@ -409,13 +409,13 @@ class SchedulersTests(SimulatorTests):
     def test_placementPolicySimple(self):
         inf = float('inf')
         resources = {
-            "Core 0": SharedResource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 8),           # GB
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 8),            # GB
         }
         m0 = Machine("m0", resources, lambda m: None, VMSchedulerSimple)
         resources = {
-            "Core 0": SharedResource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 16),          # GB
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
         }
         m1 = Machine("m1", resources, lambda m: None, VMSchedulerSimple)
 
@@ -426,15 +426,15 @@ class SchedulersTests(SimulatorTests):
 
         def getVM(vm_id, ram, req_jobs):
             resourceReq = {
-                "Core 0": inf, # GHz
-                "RAM"   : ram, # GB
+                ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
+                ResourceRequest(Resource.Type.RAM, ram),
             }
             vm = VirtualMachine(f"vm{vm_id}", resourceReq,
                     lambda machine: JobSchedulerSimple(machine, autofree=True))
             jobs = [
-                Job(500, {"Core 0": inf, "RAM": 8}, vm),
-                Job(1000, {"Core 0": inf, "RAM": 6}, vm),
-                Job(1000, {"Core 0": inf, "RAM": 6}, vm),
+                Job(500,  [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 8)], vm),
+                Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm),
+                Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm),
             ]
             for i in req_jobs:
                 vm.scheduleJob(jobs[i])
