@@ -301,34 +301,41 @@ class VirtualizationTests(SimulatorTests):
     def test_2jobsOn2VMs(self):
         inf = float('inf')
         resources = {
-            "Core 0": SharedResource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 16),          # GB
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)
         resourceReq0 = {
-            "Core 0": inf, # GHz
-            "RAM"   : 8,   # GB
+            ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
+            ResourceRequest(Resource.Type.RAM, 8),
         }
         vm0 = VirtualMachine("vm0", resourceReq0)
         resourceReq1 = {
-            "Core 0": inf, # GHz
-            "RAM"   : 8,   # GB
+            ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
+            ResourceRequest(Resource.Type.RAM, 8),
         }
         vm1 = VirtualMachine("vm1", resourceReq0)
         m0.allocateVM(vm0)
         m0.allocateVM(vm1)
-        job0 = Job(100, {"Core 0": inf, "RAM": 2}, vm0)
-        job1 = Job(100, {"Core 0": inf, "RAM": 2}, vm1)
+
+        job0 = Job(100, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 5)], vm0)
+        job1 = Job(100, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 5)], vm1)
 
         sim = Simulator.getInstance()
         sim.addEvent(0, JobStart(job0))
-        sim.addEvent(1, JobStart(job1))
+        sim.addEvent(0, JobStart(job1))
+        inspector = EventInspector([
+            (0, "JobStart_Job_0"),
+            (0, "JobStart_Job_1"),
+            (20, "JobFinish_Job_0"),
+            (20, "JobFinish_Job_1"),
+        ])
         sim.simulate()
+        inspector.verify()
 
         m0.freeVM(vm0)
         m0.freeVM(vm1)
 
-        assert sim.time == 20
 
 
 
