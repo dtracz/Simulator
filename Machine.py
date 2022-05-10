@@ -1,4 +1,5 @@
 from Resource import *
+from toolkit import *
 
 
 class Infrastructure:
@@ -30,32 +31,68 @@ class Infrastructure:
         vm.schedule(job)
 
 
+
 class Machine:
     """
     Hardware machine, that holds resources and is able
     to run jobs or host virtual machines.
     """
-    _noMachines = 0
+    _noCreated = 0
 
     def __init__(self, name, resources,
                  getJobScheduler=lambda _: None,
                  getVMScheduler=lambda _: None):
-        self._index = Machine._noMachines
+        self._index = Machine._noCreated
         self.name = name
-        self._resources = resources
+        self._resources = self.makeResources(resources)
         self._hostedVMs = set()
         self.jobsRunning = set()
         self._jobScheduler = getJobScheduler(self)
         self._vmScheduler = getVMScheduler(self)
-        Machine._noMachines += 1
+        Machine._noCreated += 1
+
+    @staticmethod
+    def makeResources(resIterable):
+        resources = MultiDictRevDict()
+        for resource in resIterable:
+            resources.add(resource.rtype, resource)
+        return resources
+
+    def getBestFitting(self, rtype, value, excluded=[]):
+        allRes = self._resources.getAll(rtype)
+        sharedRes = []
+        nonSharedRes = []
+        for res in allRes:
+            if res in excluded:
+                continue
+            if isinstance(res, SharedResource):
+                sharedRes += [res]
+            else:
+                nonSharedRes += [res]
+        if value == float('inf'):
+            if len(sharedRes) > 0:
+                return max(sharedRes, key=lambda r: r.maxValue/(1 + len(r.jobsUsing)))
+            else:
+                return max(nonSharedRes, key=lambda r: r.maxValue/(1 + len(r.jobsUsing)))
+        sharedRes.sort(key=lambda r: r.value)
+        for res in nonSharedRes:
+            if res.value >= value:
+                return res
+        if len(sharedRes) > 0:
+            return max(sharedRes, key=lambda r: r.tmpMaxValue)
+        raise RuntimeError(f"Cannot find fitting {rtype}")
 
     def allocate(self, job):
-        for name in job.resourceRequest.keys():
-            self._resources[name].allocate(job)
+        for rtype, value in job.resourceRequest:
+            resource = self.getBestFitting(rtype, value)
+            resource.allocate(value, job)
+        self.jobsRunning.add(job)
 
     def free(self, job):
-        for name in list(job.obtainedRes.keys()):
-            self._resources[name].free(job)
+        for rtype, resource in self._resources:
+            if job in resource.jobsUsing:
+                resource.free(job)
+        self.jobsRunning.remove(job)
 
     def scheduleJob(self, job):
         if self._jobScheduler is None:
@@ -72,22 +109,39 @@ class Machine:
             raise Exception("Wrong host for given virtual machine")
         if vm in self._hostedVMs:
             raise Exception("This vm is already allocated")
-        resources = {}
-        for name, value in vm.resourceRequest.items():
-            if name not in self._resources:
-                raise IndexError(f"Machine {self.name} does not have"
-                                  "requested resource ({name})")
-            resources[name] = self._resources[name].withold(value)
+        usedRes = []
+        srcResMap = {}
+        for req in vm.resourceRequest:
+            if req.fromSpecific != None:
+                if not self._resources.hasValue(req.fromSpecific):
+                    raise Exception(f"Machine {self.name} does not have specific ")
+                if len(req.fromSpecific.jobsUsing) > 0:
+                    raise Exception(f"Resource {req.fromSpecific} is already used by some jobs")
+                if len(req.fromSpecific.vmsUsing) > 0:
+                    raise Exception(f"Resource {req.fromSpecific} is already used by some vms")
+                srcRes = req.fromSpecific
+            else:
+                srcRes = self.getBestFitting(req.rtype, req.value, excluded=usedRes)
+            if req.value == float('inf') and req.shared is False:
+                req.value = srcRes.avaliableValue
+            dstRes = srcRes.withold(req.value)
+            usedRes += [srcRes]
+            dstRes = makeShared(dstRes) if req.shared else makeNonShared(dstRes)
+            srcRes.vmsUsing.add(vm)
+            srcResMap[dstRes] = srcRes
         vm.host = self
-        vm.setResources(resources)
+        vm.setResources(srcResMap)
         self._hostedVMs.add(vm)
 
     def freeVM(self, vm):
         if vm not in self._hostedVMs:
             raise Exception("This vm is allocated on a different machine")
         resources = vm.unsetResources()
-        for name, resource in resources.items():
-            self._resources[name].release(resource.value)
+        for res, srcRes in resources.items():
+            if not self._resources.hasValue(srcRes):
+                raise Exception("Resource not found")
+            srcRes.release(res)
+            srcRes.vmsUsing.remove(vm)
         self._hostedVMs.remove(vm)
         vm.host = None
 
@@ -115,14 +169,18 @@ class VirtualMachine(Machine):
                  host=None):
         super().__init__(name, {}, getJobScheduler, getVMScheduler)
         self.host = host
-        self.resourceRequest = resourceRequest #{name: value}
-        self._resources = None
+        self.resourceRequest = resourceRequest
+        self._resources = MultiDictRevDict()
+        self._srcResMap = {}
 
-    def setResources(self, resources):
-        self._resources = resources
+    def setResources(self, srcResMap):
+        for res in srcResMap:
+            self._resources.add(res.rtype, res)
+        self._srcResMap = srcResMap
 
     def unsetResources(self):
-        resources = self._resources
-        self._resources = {}
-        return resources
+        srcResMap = self._srcResMap
+        self._srcResMap = {}
+        self._resources.clear()
+        return srcResMap
 

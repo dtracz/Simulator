@@ -1,5 +1,6 @@
 from sortedcontainers import SortedDict
 from Simulator import *
+from Resource import *
 
 
 class Job:
@@ -7,20 +8,22 @@ class Job:
     Job structure. Contains all information about job
     and provides mothods of it's procedure and maintenance.
     """
-    _index = 0
+    _noCreated = 0
+    _eps = 1e-10
 
     def __init__(self, operations, resourceRequest=None, machine=None, name=None):
+        self._index = Job._noCreated
         if (name is None):
-            name = f"Job_{Job._index}"
+            name = f"Job_{self._index}"
         self.name = name
         self.machine = machine
         self.operations = operations
         self.operationsLeft = operations
-        self.resourceRequest = resourceRequest #{name: value}
+        self.resourceRequest = resourceRequest # {name: value}
         self.obtainedRes = {}
         self.predictedFinish = None
-        Job._index += 1
         self._updates = [] # [(time, speed)]
+        Job._noCreated += 1
 
     def asignMachine(self, machine):
         self.machine = machine
@@ -40,8 +43,8 @@ class Job:
 
     def getCurrentSpeed(self):
         totalFrequency = 0
-        for name, resource in self.obtainedRes.items():
-            if name[:4] == "Core":
+        for resource in self.obtainedRes.values():
+            if resource.rtype == Resource.Type.CPU_core:
                 totalFrequency += resource.value
         return totalFrequency
 
@@ -60,6 +63,8 @@ class Job:
         speed = self._updates[-1][1]
         opsDone = (time - startTime) * speed
         self.operationsLeft -= min(self.operationsLeft, opsDone)
+        if self.operationsLeft < Job._eps:
+            self.operationsLeft = 0
         return opsDone
 
     def update(self):

@@ -7,9 +7,28 @@ class MultiDictRevDict:
     and ordered by key in one side, but unordered and single
     value per key in reverse.
     """
+
+    class ItemsIterator:
+        def __init__(self, outerIter):
+            self._outerIter = outerIter
+            self._currentKey = None
+            self._innerIter = None
+
+        def __next__(self):
+            obj = None
+            while obj is None:
+                try:
+                    obj = next(self._innerIter)
+                except (TypeError, StopIteration):
+                    key, val = next(self._outerIter)
+                    self._currentKey = key
+                    self._innerIter = iter(val)
+            return (self._currentKey, obj)
+
+
     def __init__(self):
         self._fwdDict = SortedDict()
-        self._revDict = SortedDict()
+        self._revDict = {}
     
     def add(self, key, val):
         if val in self._revDict.keys():
@@ -38,6 +57,20 @@ class MultiDictRevDict:
         val = vals[0]
         self.remove(val)
         return (key, val)
+
+    def atMax(self, key):
+        sset = self._fwdDict[key]
+        return max(sset, key=lambda x: x.value)
+
+    def getAll(self, key):
+        return self._fwdDict[key]
+
+    def __iter__(self):
+        outerIter = iter(self._fwdDict.items())
+        return MultiDictRevDict.ItemsIterator(outerIter)
+
+    def hasValue(self, val):
+        return val in self._revDict
 
     def getkey(self, val):
         return self._revDict[val]
