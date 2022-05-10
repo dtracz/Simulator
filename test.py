@@ -344,21 +344,21 @@ class SchedulersTests(SimulatorTests):
     def test_jobSchedulerSimple(self):
         inf = float('inf')
         resources = {
-            "Core 0": SharedResource("Core 0", 10), # GHz
-            "RAM"   : Resource("RAM", 16),          # GB
+            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)
 
         resourceReq0 = {
-            "Core 0": inf, # GHz
-            "RAM"   : inf, # GB
+            ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
+            ResourceRequest(Resource.Type.RAM, inf),
         }
         vm0 = VirtualMachine("vm0", resourceReq0,
                 lambda machine: JobSchedulerSimple(machine, autofree=True))
 
-        job0 = Job(500, {"Core 0": inf, "RAM": 8}, vm0)
-        job1 = Job(1000, {"Core 0": inf, "RAM": 6}, vm0)
-        job2 = Job(1000, {"Core 0": inf, "RAM": 6}, vm0)
+        job0 = Job(500,  [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 8)], vm0)
+        job1 = Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm0)
+        job2 = Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm0)
 
         vm0.scheduleJob(job0)
         vm0.scheduleJob(job1)
