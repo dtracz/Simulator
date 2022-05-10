@@ -12,22 +12,32 @@ class VMSchedulerSimple(NotificationListener):
         self._vmQueue = []
 
     def isFittable(self, vm):
-        for name, value in vm.resourceRequest.items():
-            if name not in self._machine._resources:
+        used = []
+        for req in vm.resourceRequest:
+            f = lambda r: r.rtype == req.rtype and r not in used
+            avaliableRes = list(filter(f, self._machine._resources.getAll(req.rtype)))
+            if len(avaliableRes) == 0:
                 return False
-            if value != float('inf') and \
-               self._machine._resources[name].maxValue < value:
-                return False
+            if req.value == float('inf'):
+                used += [min(avaliableRes, key=lambda r: r.value)]
+            else:
+                avaliableRes = list(filter(lambda r: r.value >= req.value, avaliableRes))
+                if len(avaliableRes) == 0:
+                    return False
+                used += [min(avaliableRes, key=lambda r: r.value)]
         return True
 
     def _tryAllocate(self):
         if len(self._vmQueue) == 0:
             return False
         vm = self._vmQueue[0]
-        for name, value in vm.resourceRequest.items():
-            if value != float('inf') and \
-               self._machine._resources[name].value < value:
-                   return False
+        excluded = []
+        for req in vm.resourceRequest:
+            try:
+                res = self._machine.getBestFitting(req.rtype, req.value, excluded)
+                excluded += [res]
+            except:
+                return False
         now = Simulator.getInstance().time
         event = VMStart(self._machine, vm)
         Simulator.getInstance().addEvent(now, event)

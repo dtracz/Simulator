@@ -99,10 +99,10 @@ class Machine:
             raise Exception(f"Machine {self.name} has no job scheduler")
         self._jobScheduler.schedule(job)
 
-    #  def scheduleVM(self, job):
-    #      if self._vmScheduler is None:
-    #          raise Exception(f"Machine {self.name} has no VM scheduler")
-    #      self._vmScheduler.schedule(job)
+    def scheduleVM(self, job):
+        if self._vmScheduler is None:
+            raise Exception(f"Machine {self.name} has no VM scheduler")
+        self._vmScheduler.schedule(job)
 
     def allocateVM(self, vm):
         if vm.host != self and vm.host is not None:
