@@ -169,7 +169,7 @@ class VirtualMachine(Machine):
                  host=None):
         super().__init__(name, {}, getJobScheduler, getVMScheduler)
         self.host = host
-        self.resourceRequest = resourceRequest #{name: value}
+        self.resourceRequest = resourceRequest
         self._resources = MultiDictRevDict()
         self._srcResMap = {}
 
