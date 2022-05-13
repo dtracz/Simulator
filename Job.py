@@ -19,7 +19,7 @@ class Job:
         self.machine = machine
         self.operations = operations
         self.operationsLeft = operations
-        self.resourceRequest = resourceRequest # {name: value}
+        self.resourceRequest = resourceRequest
         self.obtainedRes = {}
         self.predictedFinish = None
         self._updates = [] # [(time, speed)]

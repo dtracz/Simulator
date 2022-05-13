@@ -57,8 +57,8 @@ class SimpleTests(SimulatorTests):
         m0 = Machine("m0", resources)
 
         res0 = [
-            (Resource.Type.CPU_core, 10), # GHz
-            (Resource.Type.RAM,      5),  # GB
+            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
+            ResourceRequest(Resource.Type.RAM,      5),  # GB
         ]
         job0 = Job(100, res0, m0)
 
@@ -78,12 +78,12 @@ class SimpleTests(SimulatorTests):
         m0 = Machine("m0", resources)
 
         res0 = [
-            (Resource.Type.CPU_core, 10), # GHz
-            (Resource.Type.RAM,      5),  # GB
+            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
+            ResourceRequest(Resource.Type.RAM,      5),  # GB
         ]
         res1 = [
-            (Resource.Type.CPU_core, 10), # GHz
-            (Resource.Type.RAM,      8),  # GB
+            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
+            ResourceRequest(Resource.Type.RAM,      8),  # GB
         ]
         job0 = Job(650, res0, m0)
         job1 = Job(450, res1, m0)
@@ -104,9 +104,9 @@ class SimpleTests(SimulatorTests):
         m0 = Machine("m0", resources)
 
         res0 = [
-            (Resource.Type.CPU_core, 10), # GHz
-            (Resource.Type.CPU_core, 5),  # GHz
-            (Resource.Type.RAM,      5),  # GB
+            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
+            ResourceRequest(Resource.Type.CPU_core, 5),  # GHz
+            ResourceRequest(Resource.Type.RAM,      5),  # GB
         ]
         job0 = Job(150, res0, m0)
 
@@ -126,12 +126,12 @@ class SimpleTests(SimulatorTests):
         m0 = Machine("m0", resources)
 
         res0 = [
-            (Resource.Type.CPU_core, 10), # GHz
-            (Resource.Type.RAM,      10),  # GB
+            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
+            ResourceRequest(Resource.Type.RAM,      10),  # GB
         ]
         res1 = [
-            (Resource.Type.CPU_core, 10), # GHz
-            (Resource.Type.RAM,      8),  # GB
+            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
+            ResourceRequest(Resource.Type.RAM,      8),  # GB
         ]
         job0 = Job(650, res0, m0)
         job1 = Job(450, res1, m0)
@@ -161,12 +161,12 @@ class SharedResourceTests(SimulatorTests):
         m0 = Machine("m0", resources)
 
         res0 = [
-            (Resource.Type.CPU_core, inf), # GHz
-            (Resource.Type.RAM,      5),   # GB
+            ResourceRequest(Resource.Type.CPU_core, inf), # GHz
+            ResourceRequest(Resource.Type.RAM,      5),   # GB
         ]
         res1 = [
-            (Resource.Type.CPU_core, inf), # GHz
-            (Resource.Type.RAM,      8),   # GB
+            ResourceRequest(Resource.Type.CPU_core, inf), # GHz
+            ResourceRequest(Resource.Type.RAM,      8),   # GB
         ]
         job0 = Job(200, res0, m0)
         job1 = Job(200, res1, m0)
@@ -189,13 +189,13 @@ class SharedResourceTests(SimulatorTests):
         m0 = Machine("m0", resources)
 
         res0 = [
-            (Resource.Type.CPU_core, inf), # GHz
-            (Resource.Type.CPU_core, inf), # GHz
-            (Resource.Type.RAM,      5),   # GB
+            ResourceRequest(Resource.Type.CPU_core, inf), # GHz
+            ResourceRequest(Resource.Type.CPU_core, inf), # GHz
+            ResourceRequest(Resource.Type.RAM,      5),   # GB
         ]
         res1 = [
-            (Resource.Type.CPU_core, inf), # GHz
-            (Resource.Type.RAM,      8),   # GB
+            ResourceRequest(Resource.Type.CPU_core, inf), # GHz
+            ResourceRequest(Resource.Type.RAM,      8),   # GB
         ]
         job0 = Job(600, res0, m0)
         job1 = Job(400, res1, m0)
@@ -217,16 +217,16 @@ class SharedResourceTests(SimulatorTests):
         m0 = Machine("m0", resources)
 
         res0 = [
-            (Resource.Type.CPU_core, 2),   # GHz
-            (Resource.Type.RAM,      5),   # GB
+            ResourceRequest(Resource.Type.CPU_core, 2),   # GHz
+            ResourceRequest(Resource.Type.RAM,      5),   # GB
         ]
         res1 = [
-            (Resource.Type.CPU_core, inf), # GHz
-            (Resource.Type.RAM,      5),   # GB
+            ResourceRequest(Resource.Type.CPU_core, inf), # GHz
+            ResourceRequest(Resource.Type.RAM,      5),   # GB
         ]
         res2 = [
-            (Resource.Type.CPU_core, inf), # GHz
-            (Resource.Type.RAM,      5),   # GB
+            ResourceRequest(Resource.Type.CPU_core, inf), # GHz
+            ResourceRequest(Resource.Type.RAM,      5),   # GB
         ]
         job0 = Job(20, res0, m0)
         job1 = Job(40, res1, m0)
@@ -318,8 +318,16 @@ class VirtualizationTests(SimulatorTests):
         m0.allocateVM(vm0)
         m0.allocateVM(vm1)
 
-        job0 = Job(100, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 5)], vm0)
-        job1 = Job(100, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 5)], vm1)
+        job0 = Job(100,
+                   [ResourceRequest(Resource.Type.CPU_core, inf),
+                    ResourceRequest(Resource.Type.RAM, 5)],
+                   vm0
+               )
+        job1 = Job(100,
+                   [ResourceRequest(Resource.Type.CPU_core, inf),
+                    ResourceRequest(Resource.Type.RAM, 5)],
+                   vm1
+               )
 
         sim = Simulator.getInstance()
         sim.addEvent(0, JobStart(job0))
@@ -356,9 +364,21 @@ class SchedulersTests(SimulatorTests):
         vm0 = VirtualMachine("vm0", resourceReq0,
                 lambda machine: JobSchedulerSimple(machine, autofree=True))
 
-        job0 = Job(500,  [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 8)], vm0)
-        job1 = Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm0)
-        job2 = Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm0)
+        job0 = Job(500,
+                   [ResourceRequest(Resource.Type.CPU_core, inf),
+                    ResourceRequest(Resource.Type.RAM, 8)],
+                   vm0
+               )
+        job1 = Job(1000,
+                   [ResourceRequest(Resource.Type.CPU_core, inf),
+                    ResourceRequest(Resource.Type.RAM, 6)],
+                   vm0
+               )
+        job2 = Job(1000,
+                   [ResourceRequest(Resource.Type.CPU_core, inf),
+                    ResourceRequest(Resource.Type.RAM, 6)],
+                   vm0
+               )
 
         vm0.scheduleJob(job0)
         vm0.scheduleJob(job1)
@@ -387,9 +407,21 @@ class SchedulersTests(SimulatorTests):
 
             vm = VirtualMachine(f"vm{vm_id}", resourceReq,
                     lambda machine: JobSchedulerSimple(machine, autofree=True))
-            job0 = Job(500,  [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 8)], vm)
-            job1 = Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm)
-            job2 = Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm)
+            job0 = Job(500,
+                       [ResourceRequest(Resource.Type.CPU_core, inf),
+                        ResourceRequest(Resource.Type.RAM, 8)],
+                       vm
+                   )
+            job1 = Job(1000,
+                       [ResourceRequest(Resource.Type.CPU_core, inf),
+                        ResourceRequest(Resource.Type.RAM, 6)],
+                       vm
+                   )
+            job2 = Job(1000,
+                       [ResourceRequest(Resource.Type.CPU_core, inf),
+                        ResourceRequest(Resource.Type.RAM, 6)],
+                       vm
+                   )
             vm.scheduleJob(job0)
             vm.scheduleJob(job1)
             vm.scheduleJob(job2)
@@ -432,9 +464,21 @@ class SchedulersTests(SimulatorTests):
             vm = VirtualMachine(f"vm{vm_id}", resourceReq,
                     lambda machine: JobSchedulerSimple(machine, autofree=True))
             jobs = [
-                Job(500,  [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 8)], vm),
-                Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm),
-                Job(1000, [(Resource.Type.CPU_core, inf), (Resource.Type.RAM, 6)], vm),
+                Job(500,
+                    [ResourceRequest(Resource.Type.CPU_core, inf),
+                     ResourceRequest(Resource.Type.RAM, 8)],
+                    vm
+                ),
+                Job(1000,
+                    [ResourceRequest(Resource.Type.CPU_core, inf),
+                     ResourceRequest(Resource.Type.RAM, 6)],
+                    vm
+                ),
+                Job(1000,
+                    [ResourceRequest(Resource.Type.CPU_core, inf),
+                     ResourceRequest(Resource.Type.RAM, 6)],
+                    vm
+                ),
             ]
             for i in req_jobs:
                 vm.scheduleJob(jobs[i])

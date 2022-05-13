@@ -83,9 +83,9 @@ class Machine:
         raise RuntimeError(f"Cannot find fitting {rtype}")
 
     def allocate(self, job):
-        for rtype, value in job.resourceRequest:
-            resource = self.getBestFitting(rtype, value)
-            resource.allocate(value, job)
+        for req in job.resourceRequest:
+            resource = self.getBestFitting(req.rtype, req.value)
+            resource.allocate(req.value, job)
         self.jobsRunning.add(job)
 
     def free(self, job):

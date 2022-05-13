@@ -97,7 +97,6 @@ class JobSchedulerSimple(NotificationListener):
     def isFittable(self, job):
         used = []
         for req in job.resourceRequest:
-            req = ResourceRequest(req[0], req[1])
             f = lambda r: r.rtype == req.rtype and r not in used
             avaliableRes = list(filter(f, self._machine.resourceRequest))
             if len(avaliableRes) == 0:
@@ -127,9 +126,9 @@ class JobSchedulerSimple(NotificationListener):
             return False
         job = self._jobQueue[0]
         excluded = []
-        for rtype, value in job.resourceRequest:
+        for req in job.resourceRequest:
             try:
-                res = self._machine.getBestFitting(rtype, value, excluded)
+                res = self._machine.getBestFitting(req.rtype, req.value, excluded)
                 excluded += [res]
             except:
                 return False
