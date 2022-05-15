@@ -180,7 +180,7 @@ class VirtualMachine(Machine):
 
     @property
     def maxResources(self):
-        if len(self._resource) > 0:
+        if len(self._resources) > 0:
             for rtype, res in self._resources:
                 yield (rtype, res.maxValue)
         else:
