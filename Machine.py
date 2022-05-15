@@ -58,6 +58,11 @@ class Machine:
             resources.add(resource.rtype, resource)
         return resources
 
+    @property
+    def maxResources(self):
+        for rtype, res in self._resources:
+            yield (rtype, res.maxValue)
+
     def getBestFitting(self, rtype, value, excluded=[]):
         allRes = self._resources.getAll(rtype)
         sharedRes = []
@@ -172,6 +177,16 @@ class VirtualMachine(Machine):
         self.resourceRequest = resourceRequest
         self._resources = MultiDictRevDict()
         self._srcResMap = {}
+
+    @property
+    def maxResources(self):
+        if len(self._resource) > 0:
+            for rtype, res in self._resources:
+                yield (rtype, res.maxValue)
+        else:
+            for req in self.resourceRequest:
+                # TODO: request value of `inf`
+                yield (req.rtype, req.value)
 
     def setResources(self, srcResMap):
         for res in srcResMap:
