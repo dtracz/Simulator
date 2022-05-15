@@ -16,15 +16,11 @@ class VMSchedulerSimple(NotificationListener):
         for req in vm.resourceRequest:
             f = lambda r: r.rtype == req.rtype and r not in used
             avaliableRes = list(filter(f, self._machine._resources.getAll(req.rtype)))
+            if req.value != float('inf'):
+                avaliableRes = list(filter(lambda r: r.value >= req.value, avaliableRes))
             if len(avaliableRes) == 0:
                 return False
-            if req.value == float('inf'):
-                used += [min(avaliableRes, key=lambda r: r.value)]
-            else:
-                avaliableRes = list(filter(lambda r: r.value >= req.value, avaliableRes))
-                if len(avaliableRes) == 0:
-                    return False
-                used += [min(avaliableRes, key=lambda r: r.value)]
+            used += [min(avaliableRes, key=lambda r: r.value)]
         return True
 
     def _tryAllocate(self):
@@ -99,15 +95,11 @@ class JobSchedulerSimple(NotificationListener):
         for req in job.resourceRequest:
             f = lambda r: r.rtype == req.rtype and r not in used
             avaliableRes = list(filter(f, self._machine.resourceRequest))
+            if req.value != float('inf'):
+                avaliableRes = list(filter(lambda r: r.value >= req.value, avaliableRes))
             if len(avaliableRes) == 0:
                 return False
-            if req.value == float('inf'):
-                used += [min(avaliableRes, key=lambda r: r.value)]
-            else:
-                avaliableRes = list(filter(lambda r: r.value >= req.value, avaliableRes))
-                if len(avaliableRes) == 0:
-                    return False
-                used += [min(avaliableRes, key=lambda r: r.value)]
+            used += [min(avaliableRes, key=lambda r: r.value)]
         return True
 
     def _autoFreeHost(self):
