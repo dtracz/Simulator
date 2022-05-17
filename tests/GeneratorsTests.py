@@ -27,6 +27,7 @@ class GeneratorsTests(SimulatorTests):
             assert len(ramReqs) == 1
             assert ramReqs[0].value == 1
 
+
     def test_simpleJobGeneration_rand(self):
         gen = RandomJobGenerator()
         jobs = gen.getJobs(1000)
@@ -42,5 +43,12 @@ class GeneratorsTests(SimulatorTests):
             assert len(ramReqs) == 1
             assert 0 < ramReqs[0].value and ramReqs[0].value <= 16
 
+
+    def test_vmWrapping(self):
+        gen = RandomJobGenerator()
+        jobs = list(gen.getJobs(20))
+        vm = CreateVM.minimal(jobs)
+        for job in jobs:
+            assert vm._jobScheduler.isFittable(job)
 
 

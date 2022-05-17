@@ -1,6 +1,8 @@
 from numpy import random
 from Job import *
 from Resource import *
+from Machine import *
+from Schedulers import *
 
 
 class RandomJobGenerator:
@@ -22,3 +24,33 @@ class RandomJobGenerator:
                 req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
             yield Job(operations[i], req, machine)
             
+
+
+class CreateVM:
+
+    @staticmethod
+    def minimal(jobs,
+                coreLimit=float('inf'),
+                scheduler=lambda m: JobSchedulerSimple(m, autofree=True),
+               ):
+        name = "vm_for"
+        noCores = 0
+        ramSize = 0
+        for job in jobs:
+            name += f"_{job.name}"
+            currentNoCores = 0
+            currentRamSize = 0
+            for req in job.resourceRequest:
+                if req.rtype is Resource.Type.CPU_core:
+                    currentNoCores += 1
+                if req.rtype is Resource.Type.RAM:
+                    currentRamSize += req.value
+            noCores = max(noCores, currentNoCores)
+            ramSize = max(ramSize, currentRamSize)
+        noCores = min(noCores, coreLimit)
+        req = [ResourceRequest(Resource.Type.RAM, ramSize)]
+        for _ in range(noCores):
+            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
+        vm = VirtualMachine(name, req, scheduler)
+        return vm
+
