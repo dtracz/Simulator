@@ -94,8 +94,12 @@ class FromFileJobGenerator:
         return ops, noCores, ramSize
 
     def getJobs(self, n=1, machine=None):
-        for i in range(n):
-            line = next(self.file)
+        while n > 0:
+            n -= 1
+            try:
+                line = next(self.file)
+            except StopIteration:
+                break
             ops, noCores, ramSize = self.parseLine(line)
             job = self.createJob(ops, noCores, ramSize, machine)
             yield job
