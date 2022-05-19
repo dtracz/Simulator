@@ -1,12 +1,28 @@
 from numpy import random
 import json, string
+from abc import ABCMeta, abstractmethod
 from Job import *
 from Resource import *
 from Machine import *
 from Schedulers import *
 
 
-class RandomJobGenerator:
+class JobGenerator(metaclass=ABCMeta):
+
+    @staticmethod
+    def createJob(operations, noCores, ramSize, machine=None):
+        req = [ResourceRequest(Resource.Type.RAM, ramSize)]
+        for _ in range(noCores):
+            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
+        return Job(operations, req, machine)
+
+    @abstractmethod
+    def getJobs(self, n=1, machine=None):
+        pass
+
+
+
+class RandomJobGenerator(JobGenerator):
     def __init__(self,
                  operations=lambda s: abs(random.normal(100, 50, s)),
                  noCores=lambda s: 1+random.binomial(7, 0.08, s),
@@ -20,55 +36,16 @@ class RandomJobGenerator:
         noCores = self._noCores(n)
         ramSize = self._ramSize(n)
         for i in range(n):
-            req = [ResourceRequest(Resource.Type.RAM, ramSize[i])]
-            for _ in range(noCores[i]):
-                req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
-            yield Job(operations[i], req, machine)
+            job = self.createJob(operations[i], noCores[i], ramSize[i], machine)
+            yield job
             
 
 
-class CreateVM:
-
-    @staticmethod
-    def minimal(jobs,
-                coreLimit=float('inf'),
-                scheduler=lambda m: JobSchedulerSimple(m, autofree=True),
-               ):
-        name = "vm_for"
-        noCores = 0
-        ramSize = 0
-        for job in jobs:
-            name += f"_{job.name}"
-            currentNoCores = 0
-            currentRamSize = 0
-            for req in job.resourceRequest:
-                if req.rtype is Resource.Type.CPU_core:
-                    currentNoCores += 1
-                if req.rtype is Resource.Type.RAM:
-                    currentRamSize += req.value
-            noCores = max(noCores, currentNoCores)
-            ramSize = max(ramSize, currentRamSize)
-        noCores = min(noCores, coreLimit)
-        req = [ResourceRequest(Resource.Type.RAM, ramSize)]
-        for _ in range(noCores):
-            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
-        vm = VirtualMachine(name, req, scheduler)
-        return vm
-
-
-
-class FromFileJobGenerator:
+class FromFileJobGenerator(JobGenerator):
     def __init__(self, fname):
         self.fname = fname
         self.cpuSpeeds = {'xeon e3-1270 v5': 3.6}
         self.file = open(self.fname)
-
-    @staticmethod
-    def createJob(operations, noCores, ramSize, machine=None):
-        req = [ResourceRequest(Resource.Type.RAM, ramSize)]
-        for _ in range(noCores):
-            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
-        return Job(operations, req, machine)
 
     @staticmethod
     def _randWord(length):
@@ -105,4 +82,34 @@ class FromFileJobGenerator:
                 continue
             job = self.createJob(ops, noCores, ramSize, machine)
             yield job
+
+
+
+class CreateVM:
+
+    @staticmethod
+    def minimal(jobs,
+                coreLimit=float('inf'),
+                scheduler=lambda m: JobSchedulerSimple(m, autofree=True),
+               ):
+        name = "vm_for"
+        noCores = 0
+        ramSize = 0
+        for job in jobs:
+            name += f"_{job.name}"
+            currentNoCores = 0
+            currentRamSize = 0
+            for req in job.resourceRequest:
+                if req.rtype is Resource.Type.CPU_core:
+                    currentNoCores += 1
+                if req.rtype is Resource.Type.RAM:
+                    currentRamSize += req.value
+            noCores = max(noCores, currentNoCores)
+            ramSize = max(ramSize, currentRamSize)
+        noCores = min(noCores, coreLimit)
+        req = [ResourceRequest(Resource.Type.RAM, ramSize)]
+        for _ in range(noCores):
+            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
+        vm = VirtualMachine(name, req, scheduler)
+        return vm
 
