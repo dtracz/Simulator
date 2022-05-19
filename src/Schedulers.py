@@ -12,15 +12,14 @@ class VMSchedulerSimple(NotificationListener):
         self._vmQueue = []
 
     def isFittable(self, vm):
-        used = []
+        resources = list(self._machine.maxResources)
         for req in vm.resourceRequest:
-            f = lambda r: r[0] == req.rtype and r not in used
-            avaliableRes = list(filter(f, self._machine.maxResources))
+            avaliableRes = list(filter(lambda r: r[0] == req.rtype, resources))
             if req.value != float('inf'):
                 avaliableRes = list(filter(lambda r: r[1] >= req.value, avaliableRes))
             if len(avaliableRes) == 0:
                 return False
-            used += [min(avaliableRes, key=lambda r: r[1])]
+            resources.remove(min(avaliableRes, key=lambda r: r[1]))
         return True
 
     def _tryAllocate(self):
@@ -91,15 +90,14 @@ class JobSchedulerSimple(NotificationListener):
         self._finished = False
 
     def isFittable(self, job):
-        used = []
+        resources = list(self._machine.maxResources)
         for req in job.resourceRequest:
-            f = lambda r: r[0] == req.rtype and r not in used
-            avaliableRes = list(filter(f, self._machine.maxResources))
+            avaliableRes = list(filter(lambda r: r[0] == req.rtype, resources))
             if req.value != float('inf'):
                 avaliableRes = list(filter(lambda r: r[1] >= req.value, avaliableRes))
             if len(avaliableRes) == 0:
                 return False
-            used += [min(avaliableRes, key=lambda r: r[1])]
+            resources.remove(min(avaliableRes, key=lambda r: r[1]))
         return True
 
     def _autoFreeHost(self):
@@ -133,7 +131,7 @@ class JobSchedulerSimple(NotificationListener):
         if self._finished:
             raise Exception(f"Scheduler out of operation")
         if not self.isFittable(job):
-            raise Exception(f"{vm.name} can never be allocated on {self._machine.name}")
+            raise Exception(f"{job.name} can never be allocated on {self._machine.name}")
         self._jobQueue += [job]
 
     def notify(self, event):
