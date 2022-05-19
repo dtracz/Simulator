@@ -62,7 +62,6 @@ class FromFileJobGenerator:
         self.fname = fname
         self.cpuSpeeds = {'xeon e3-1270 v5': 3.6}
         self.file = open(self.fname)
-        next(self.file)
 
     @staticmethod
     def createJob(operations, noCores, ramSize, machine=None):
@@ -98,9 +97,12 @@ class FromFileJobGenerator:
             n -= 1
             try:
                 line = next(self.file)
+                ops, noCores, ramSize = self.parseLine(line)
             except StopIteration:
                 break
-            ops, noCores, ramSize = self.parseLine(line)
+            except Exception:
+                n += 1
+                continue
             job = self.createJob(ops, noCores, ramSize, machine)
             yield job
 
