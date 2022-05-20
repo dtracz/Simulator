@@ -109,7 +109,7 @@ class CreateVM:
         noCores = min(noCores, coreLimit)
         req = [ResourceRequest(Resource.Type.RAM, ramSize)]
         for _ in range(noCores):
-            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
+            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'), shared=True)]
         vm = VirtualMachine(name, req, scheduler)
         return vm
 
