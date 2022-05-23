@@ -10,47 +10,47 @@ class VirtualizationTests(SimulatorTests):
 
     def test_allocateVM(self):
         inf = float('inf')
-        resources = {
+        resources = [
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
-        }
+        ]
         m0 = Machine("m0", resources)
-        resourceReq0 = {
+        resourceReq0 = [
             ResourceRequest(Resource.Type.CPU_core, inf),
             ResourceRequest(Resource.Type.CPU_core, inf),
             ResourceRequest(Resource.Type.RAM, 5),
-        }
+        ]
         vm0 = VirtualMachine("vm0", resourceReq0)
         m0.allocateVM(vm0)
-        assert m0._resources.getAll(Resource.Type.CPU_core)[0].avaliableValue == 0
-        assert m0._resources.getAll(Resource.Type.CPU_core)[1].avaliableValue == 0
-        assert m0._resources.getAll(Resource.Type.RAM)[0].avaliableValue == 11
-        assert vm0._resources.getAll(Resource.Type.CPU_core)[0].maxValue == 10
-        assert vm0._resources.getAll(Resource.Type.CPU_core)[1].maxValue == 10
-        assert vm0._resources.getAll(Resource.Type.RAM)[0].maxValue == 5
+        assert m0._resources[0].avaliableValue == 0
+        assert m0._resources[1].avaliableValue == 0
+        assert m0._resources[2].avaliableValue == 11
+        assert vm0._resources[0].maxValue == 10
+        assert vm0._resources[1].maxValue == 10
+        assert vm0._resources[2].maxValue == 5
 
     def test_freeVM(self):
         inf = float('inf')
-        resources = {
+        resources = [
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
-        }
+        ]
         m0 = Machine("m0", resources)
-        resourceReq0 = {
+        resourceReq0 = [
             ResourceRequest(Resource.Type.CPU_core, inf),
             ResourceRequest(Resource.Type.CPU_core, inf),
             ResourceRequest(Resource.Type.RAM, 5),
-        }
+        ]
         vm0 = VirtualMachine("vm0", resourceReq0)
         m0.allocateVM(vm0)
         m0.freeVM(vm0)
-        assert m0._resources.getAll(Resource.Type.CPU_core)[0].avaliableValue == 10
-        assert isinstance(m0._resources.getAll(Resource.Type.CPU_core)[0], SharedResource)
-        assert m0._resources.getAll(Resource.Type.CPU_core)[1].avaliableValue == 10
-        assert isinstance(m0._resources.getAll(Resource.Type.CPU_core)[1], SharedResource)
-        assert m0._resources.getAll(Resource.Type.RAM)[0].avaliableValue == 16
+        assert m0._resources[0].avaliableValue == 10
+        assert isinstance(m0._resources[0], SharedResource)
+        assert m0._resources[1].avaliableValue == 10
+        assert isinstance(m0._resources[1], SharedResource)
+        assert m0._resources[2].avaliableValue == 16
         assert 0 == len(vm0._resources)
 
 

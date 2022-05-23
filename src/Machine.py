@@ -44,27 +44,20 @@ class Machine:
                  getVMScheduler=lambda _: None):
         self._index = Machine._noCreated
         self.name = name
-        self._resources = self.makeResources(resources)
+        self._resources = resources #self.makeResources(resources)
         self._hostedVMs = set()
         self.jobsRunning = set()
         self._jobScheduler = getJobScheduler(self)
         self._vmScheduler = getVMScheduler(self)
         Machine._noCreated += 1
 
-    @staticmethod
-    def makeResources(resIterable):
-        resources = MultiDictRevDict()
-        for resource in resIterable:
-            resources.add(resource.rtype, resource)
-        return resources
-
     @property
     def maxResources(self):
-        for rtype, res in self._resources:
-            yield (rtype, res.maxValue)
+        for res in self._resources:
+            yield (res.rtype, res.maxValue)
 
     def getBestFitting(self, rtype, value, excluded=[]):
-        allRes = self._resources.getAll(rtype)
+        allRes = list(filter(lambda r: r.rtype == rtype, self._resources))
         sharedRes = []
         nonSharedRes = []
         for res in allRes:
@@ -94,7 +87,7 @@ class Machine:
         self.jobsRunning.add(job)
 
     def free(self, job):
-        for rtype, resource in self._resources:
+        for resource in self._resources:
             if job in resource.jobsUsing:
                 resource.free(job)
         self.jobsRunning.remove(job)
@@ -143,8 +136,10 @@ class Machine:
             raise Exception("This vm is allocated on a different machine")
         resources = vm.unsetResources()
         for res, srcRes in resources.items():
-            if not self._resources.hasValue(srcRes):
+            if srcRes not in self._resources:
                 raise Exception("Resource not found")
+            #  if res.rtype == Resource.Type.RAM:
+            #      breakpoint()
             srcRes.release(res)
             srcRes.vmsUsing.remove(vm)
         self._hostedVMs.remove(vm)
@@ -175,14 +170,14 @@ class VirtualMachine(Machine):
         super().__init__(name, {}, getJobScheduler, getVMScheduler)
         self.host = host
         self.resourceRequest = resourceRequest
-        self._resources = MultiDictRevDict()
+        self._resources = []
         self._srcResMap = {}
 
     @property
     def maxResources(self):
         if len(self._resources) > 0:
-            for rtype, res in self._resources:
-                yield (rtype, res.maxValue)
+            for res in self._resources:
+                yield (res.rtype, res.maxValue)
         else:
             for req in self.resourceRequest:
                 # TODO: request value of `inf`
@@ -190,7 +185,7 @@ class VirtualMachine(Machine):
 
     def setResources(self, srcResMap):
         for res in srcResMap:
-            self._resources.add(res.rtype, res)
+            self._resources += [res]
         self._srcResMap = srcResMap
 
     def unsetResources(self):
