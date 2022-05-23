@@ -55,9 +55,11 @@ class Resource:
     def release(self, resource):
         if resource.value == float('inf'):
             self.value = self.maxValue
-        elif self.value + resource.value > self.maxValue:
-            raise RuntimeError("Resource overflow after release")
-        self.value += resource.value
+        elif self.value + resource.value > self.maxValue + 1e-10:
+            raise RuntimeError(f"Resource overflow after release"
+                               f"({self.value + resource.value} / {self.maxValue}")
+        else:
+            self.value = min(self.value + resource.value, self.maxValue)
 
     def allocate(self, requestedValue, job):
         resource = self.withold(requestedValue)
