@@ -67,7 +67,7 @@ class Machine:
                 sharedRes += [res]
             else:
                 nonSharedRes += [res]
-        if value == float('inf'):
+        if value == INF:
             if len(sharedRes) > 0:
                 return max(sharedRes, key=lambda r: r.maxValue/(1 + len(r.jobsUsing)))
             else:
@@ -120,7 +120,7 @@ class Machine:
                 srcRes = req.fromSpecific
             else:
                 srcRes = self.getBestFitting(req.rtype, req.value, excluded=usedRes)
-            if req.value == float('inf') and req.shared is False:
+            if req.value == INF and req.shared is False:
                 req.value = srcRes.avaliableValue
             dstRes = srcRes.withold(req.value)
             usedRes += [srcRes]

@@ -10,7 +10,7 @@ from Schedulers import *
 class SchedulersTests(SimulatorTests):
 
     def test_jobSchedulerSimple(self):
-        inf = float('inf')
+        inf = INF
         resources = {
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
@@ -52,7 +52,7 @@ class SchedulersTests(SimulatorTests):
 
 
     def test_vmSchedulerSimple(self):
-        inf = float('inf')
+        inf = INF
         resources = {
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
@@ -99,7 +99,7 @@ class SchedulersTests(SimulatorTests):
 
 
     def test_placementPolicySimple(self):
-        inf = float('inf')
+        inf = INF
         resources = {
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 8),            # GB

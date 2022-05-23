@@ -21,7 +21,7 @@ class GeneratorsTests(SimulatorTests):
                                    job.resourceRequest))
             assert len(coreReqs) == 2
             for coreReq in coreReqs:
-                assert coreReq.value == float('inf')
+                assert coreReq.value == INF
             ramReqs = list(filter(lambda r: r.rtype is Resource.Type.RAM,
                                   job.resourceRequest))
             assert len(ramReqs) == 1
@@ -37,7 +37,7 @@ class GeneratorsTests(SimulatorTests):
                                    job.resourceRequest))
             assert 1 <= len(coreReqs) and len(coreReqs) <= 8
             for coreReq in coreReqs:
-                assert coreReq.value == float('inf')
+                assert coreReq.value == INF
             ramReqs = list(filter(lambda r: r.rtype is Resource.Type.RAM,
                                   job.resourceRequest))
             assert len(ramReqs) == 1

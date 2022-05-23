@@ -1,4 +1,5 @@
 from enum import Enum
+from toolkit import *
 from Events import *
 
 
@@ -45,7 +46,7 @@ class Resource:
         Reduces current value of resource by requested value.
         Returns new Resource representing obtained resource.
         """
-        if value == float('inf'):
+        if value == INF:
             value = self.value
         if value > self.value:
             raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
@@ -53,9 +54,9 @@ class Resource:
         return Resource(self.rtype, value)
 
     def release(self, resource):
-        if resource.value == float('inf'):
+        if resource.value == INF:
             self.value = self.maxValue
-        elif self.value + resource.value > self.maxValue + 1e-10:
+        elif self.value + resource.value > self.maxValue + EPS:
             raise RuntimeError(f"Resource overflow after release"
                                f"({self.value + resource.value} / {self.maxValue}")
         else:
@@ -108,7 +109,7 @@ class SharedResource(Resource):
 
     def withold(self, value):
         resource = None
-        if value == float('inf'):
+        if value == INF:
             self.value = self.tmpMaxValue / (self.noDynamicJobs + 1)
             resource = self
         elif value > self.tmpMaxValue: raise RuntimeError(f"Requested {value} out of {self.value} avaliable")

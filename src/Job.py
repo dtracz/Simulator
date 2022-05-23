@@ -9,7 +9,6 @@ class Job:
     and provides mothods of it's procedure and maintenance.
     """
     _noCreated = 0
-    _eps = 1e-10
 
     def __init__(self, operations, resourceRequest=None, machine=None, name=None):
         self._index = Job._noCreated
@@ -63,7 +62,7 @@ class Job:
         speed = self._updates[-1][1]
         opsDone = (time - startTime) * speed
         self.operationsLeft -= min(self.operationsLeft, opsDone)
-        if self.operationsLeft < Job._eps:
+        if self.operationsLeft < EPS:
             self.operationsLeft = 0
         return opsDone
 

@@ -15,7 +15,7 @@ class VMSchedulerSimple(NotificationListener):
         resources = list(self._machine.maxResources)
         for req in vm.resourceRequest:
             avaliableRes = list(filter(lambda r: r[0] == req.rtype, resources))
-            if req.value != float('inf'):
+            if req.value != INF:
                 avaliableRes = list(filter(lambda r: r[1] >= req.value, avaliableRes))
             if len(avaliableRes) == 0:
                 return False
@@ -93,7 +93,7 @@ class JobSchedulerSimple(NotificationListener):
         resources = list(self._machine.maxResources)
         for req in job.resourceRequest:
             avaliableRes = list(filter(lambda r: r[0] == req.rtype, resources))
-            if req.value != float('inf'):
+            if req.value != INF:
                 avaliableRes = list(filter(lambda r: r[1] >= req.value, avaliableRes))
             if len(avaliableRes) == 0:
                 return False

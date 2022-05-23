@@ -9,7 +9,7 @@ from Job import *
 class VirtualizationTests(SimulatorTests):
 
     def test_allocateVM(self):
-        inf = float('inf')
+        inf = INF
         resources = [
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             SharedResource(Resource.Type.CPU_core, 10), # GHz
@@ -31,7 +31,7 @@ class VirtualizationTests(SimulatorTests):
         assert vm0._resources[2].maxValue == 5
 
     def test_freeVM(self):
-        inf = float('inf')
+        inf = INF
         resources = [
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             SharedResource(Resource.Type.CPU_core, 10), # GHz
@@ -55,7 +55,7 @@ class VirtualizationTests(SimulatorTests):
 
 
     def test_2jobsOn2VMs(self):
-        inf = float('inf')
+        inf = INF
         resources = {
             SharedResource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
