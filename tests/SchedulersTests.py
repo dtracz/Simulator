@@ -12,7 +12,7 @@ class SchedulersTests(SimulatorTests):
     def test_jobSchedulerSimple(self):
         inf = INF
         resources = {
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)
@@ -54,7 +54,7 @@ class SchedulersTests(SimulatorTests):
     def test_vmSchedulerSimple(self):
         inf = INF
         resources = {
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources, lambda m: None, VMSchedulerSimple)
@@ -101,12 +101,12 @@ class SchedulersTests(SimulatorTests):
     def test_placementPolicySimple(self):
         inf = INF
         resources = {
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 8),            # GB
         }
         m0 = Machine("m0", resources, lambda m: None, VMSchedulerSimple)
         resources = {
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         }
         m1 = Machine("m1", resources, lambda m: None, VMSchedulerSimple)

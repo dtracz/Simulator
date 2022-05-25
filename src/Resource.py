@@ -19,6 +19,11 @@ class Resource:
     (max possible and current), and provides information about
     all jobs that re using this resource at the moment.
     Provides methonds of allocation and freeing resource.
+
+    Resource could be automatically spread among all jobs
+    that are using it at the moment. If n jobs are using
+    Resource in this way, all of them benefits equally
+    from 1/n of it's non witheld value.
     """
     class Type(Enum):
         CPU_core = 1
@@ -30,36 +35,22 @@ class Resource:
 
     def __init__(self, rtype, value):
         self.rtype = rtype 
-        self.value = value
         self.maxValue = value
+        self.tmpMaxValue = value
+        self.value = value
         self.jobsUsing = set()
         self.vmsUsing = set()
 
     @property
     def avaliableValue(self):
-        return self.value
+        return self.tmpMaxValue
 
-    def withold(self, value):
-        """
-        value -- amount of resource to withold.
-        Reduces current value of resource by requested value.
-        Returns new Resource representing obtained resource.
-        """
-        if value == INF:
-            value = self.value
-        if value > self.value:
-            raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
-        self.value -= value
-        return Resource(self.rtype, value)
-
-    def release(self, resource):
-        if resource.value == INF:
-            self.value = self.maxValue
-        elif self.value + resource.value > self.maxValue + EPS:
-            raise RuntimeError(f"Resource overflow after release"
-                               f"({self.value + resource.value} / {self.maxValue}")
-        else:
-            self.value = min(self.value + resource.value, self.maxValue)
+    @property
+    def noDynamicJobs(self):
+        noDynamic = 0
+        for job in self.jobsUsing:
+            noDynamic += job.obtainedRes[id(self)] is self
+        return noDynamic
 
     def allocate(self, requestedValue, job):
         resource = self.withold(requestedValue)
@@ -71,33 +62,6 @@ class Resource:
         self.release(resource)
         del job.obtainedRes[id(self)]
         self.jobsUsing.remove(job)
-
-    def __lt__(self, other):
-        if self.rtype != other.rtype:
-            return self.rtype < other.rtype
-        return self.value < other.value
-
-    def __hash__(self):
-        return id(self)
-
-
-
-class SharedResource(Resource):
-    """
-    Resource that is automatically spread among all jobs
-    that are using it at the moment.
-    If n jobs are using SharedResource, all of them benefits equally
-    from 1/n of it's value. If job starts of finishes to use SharedResource,
-    all other using it at the moment are recalculated.
-    """
-
-    def __init__(self, rtype, value):
-        super().__init__(rtype, value)
-        self.tmpMaxValue = value
-
-    @property
-    def avaliableValue(self):
-        return self.tmpMaxValue
 
     @property
     def noDynamicJobs(self):
@@ -122,10 +86,10 @@ class SharedResource(Resource):
     def release(self, resource):
         if resource is self:
             self.value = self.tmpMaxValue / max(1, self.noDynamicJobs - 1)
-        elif self.tmpMaxValue + resource.value > self.maxValue:
+        elif self.tmpMaxValue + resource.value > self.maxValue + EPS:
             raise RuntimeError("Resource overflow after release")
         else:
-            self.tmpMaxValue += resource.value
+            self.tmpMaxValue = min(self.tmpMaxValue + resource.value, self.maxValue)
             self.value = self.tmpMaxValue / max(self.noDynamicJobs, 1)
         self.recalculateJobs()
 
@@ -137,20 +101,11 @@ class SharedResource(Resource):
             jobRecalculate = JobRecalculate(job)
             Simulator.getInstance().addEvent(now, jobRecalculate)
 
+    def __lt__(self, other):
+        if self.rtype != other.rtype:
+            return self.rtype < other.rtype
+        return self.value < other.value
 
-
-def makeShared(resource):
-    if isinstance(resource, SharedResource):
-        return resource
-    if len(resource.jobsUsing) > 0 or \
-       len(resource.vmsUsing) > 0:
-        raise Exception("Resource already used and thus cannot be converted")
-    return SharedResource(resource.rtype, resource.value)
-
-
-def makeNonShared(resource):
-    if len(resource.jobsUsing) > 0 or \
-       len(resource.vmsUsing) > 0:
-        raise Exception("Resource already used and thus cannot be converted")
-    return Resource(resource.rtype, resource.value)
+    def __hash__(self):
+        return id(self)
 

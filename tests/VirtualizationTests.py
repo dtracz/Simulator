@@ -11,8 +11,8 @@ class VirtualizationTests(SimulatorTests):
     def test_allocateVM(self):
         inf = INF
         resources = [
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         ]
         m0 = Machine("m0", resources)
@@ -33,8 +33,8 @@ class VirtualizationTests(SimulatorTests):
     def test_freeVM(self):
         inf = INF
         resources = [
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         ]
         m0 = Machine("m0", resources)
@@ -47,9 +47,9 @@ class VirtualizationTests(SimulatorTests):
         m0.allocateVM(vm0)
         m0.freeVM(vm0)
         assert m0._resources[0].avaliableValue == 10
-        assert isinstance(m0._resources[0], SharedResource)
+        assert isinstance(m0._resources[0], Resource)
         assert m0._resources[1].avaliableValue == 10
-        assert isinstance(m0._resources[1], SharedResource)
+        assert isinstance(m0._resources[1], Resource)
         assert m0._resources[2].avaliableValue == 16
         assert 0 == len(vm0._resources)
 
@@ -57,7 +57,7 @@ class VirtualizationTests(SimulatorTests):
     def test_2jobsOn2VMs(self):
         inf = INF
         resources = {
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)

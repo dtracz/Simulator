@@ -58,26 +58,14 @@ class Machine:
 
     def getBestFitting(self, rtype, value, excluded=[]):
         allRes = list(filter(lambda r: r.rtype == rtype, self._resources))
-        sharedRes = []
-        nonSharedRes = []
-        for res in allRes:
-            if res in excluded:
-                continue
-            if isinstance(res, SharedResource):
-                sharedRes += [res]
-            else:
-                nonSharedRes += [res]
         if value == INF:
-            if len(sharedRes) > 0:
-                return max(sharedRes, key=lambda r: r.maxValue/(1 + len(r.jobsUsing)))
-            else:
-                return max(nonSharedRes, key=lambda r: r.maxValue/(1 + len(r.jobsUsing)))
-        sharedRes.sort(key=lambda r: r.value)
-        for res in nonSharedRes:
+            allRes = list(filter(lambda r: r.rtype == rtype, self._resources))
+            f = lambda r: r.maxValue/(1 + len(r.jobsUsing) + len(r.vmsUsing))
+            return max(allRes, key=f)
+        allRes.sort(key=lambda r: r.value)
+        for res in allRes:
             if res.value >= value:
                 return res
-        if len(sharedRes) > 0:
-            return max(sharedRes, key=lambda r: r.tmpMaxValue)
         raise RuntimeError(f"Cannot find fitting {rtype}")
 
     def allocate(self, job):
@@ -115,7 +103,6 @@ class Machine:
                 req.value = srcRes.avaliableValue
             dstRes = srcRes.withold(req.value)
             usedRes += [srcRes]
-            dstRes = makeShared(dstRes) if req.shared else makeNonShared(dstRes)
             srcRes.vmsUsing.add(vm)
             srcResMap[dstRes] = srcRes
         vm.host = self
