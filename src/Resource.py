@@ -4,12 +4,11 @@ from Events import *
 
 
 class ResourceRequest:
-    def __init__(self, rtype, value, fromSpecific=None, shared=False):
+    def __init__(self, rtype, value, shared=False):
         if value <= 0:
             raise Exception(f"Cannot request {rtype} of value {value}")
         self.rtype = rtype
         self.value = value
-        self.fromSpecific = fromSpecific
         self.shared = shared
 
 

@@ -110,16 +110,7 @@ class Machine:
         usedRes = []
         srcResMap = {}
         for req in vm.resourceRequest:
-            if req.fromSpecific != None:
-                if not self._resources.hasValue(req.fromSpecific):
-                    raise Exception(f"Machine {self.name} does not have specific ")
-                if len(req.fromSpecific.jobsUsing) > 0:
-                    raise Exception(f"Resource {req.fromSpecific} is already used by some jobs")
-                if len(req.fromSpecific.vmsUsing) > 0:
-                    raise Exception(f"Resource {req.fromSpecific} is already used by some vms")
-                srcRes = req.fromSpecific
-            else:
-                srcRes = self.getBestFitting(req.rtype, req.value, excluded=usedRes)
+            srcRes = self.getBestFitting(req.rtype, req.value, excluded=usedRes)
             if req.value == INF and req.shared is False:
                 req.value = srcRes.avaliableValue
             dstRes = srcRes.withold(req.value)
@@ -138,8 +129,6 @@ class Machine:
         for res, srcRes in resources.items():
             if srcRes not in self._resources:
                 raise Exception("Resource not found")
-            #  if res.rtype == Resource.Type.RAM:
-            #      breakpoint()
             srcRes.release(res)
             srcRes.vmsUsing.remove(vm)
         self._hostedVMs.remove(vm)
