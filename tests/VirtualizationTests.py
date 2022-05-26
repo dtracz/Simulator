@@ -17,9 +17,9 @@ class VirtualizationTests(SimulatorTests):
         ]
         m0 = Machine("m0", resources)
         resourceReq0 = [
-            ResourceRequest(Resource.Type.CPU_core, inf),
-            ResourceRequest(Resource.Type.CPU_core, inf),
-            ResourceRequest(Resource.Type.RAM, 5),
+            ResourceRequest(Resource.Type.CPU_core, inf, shared=False),
+            ResourceRequest(Resource.Type.CPU_core, inf, shared=False),
+            ResourceRequest(Resource.Type.RAM, 5, shared=False),
         ]
         vm0 = VirtualMachine("vm0", resourceReq0)
         m0.allocateVM(vm0)
@@ -39,9 +39,9 @@ class VirtualizationTests(SimulatorTests):
         ]
         m0 = Machine("m0", resources)
         resourceReq0 = [
-            ResourceRequest(Resource.Type.CPU_core, inf),
-            ResourceRequest(Resource.Type.CPU_core, inf),
-            ResourceRequest(Resource.Type.RAM, 5),
+            ResourceRequest(Resource.Type.CPU_core, inf, shared=False),
+            ResourceRequest(Resource.Type.CPU_core, inf, shared=False),
+            ResourceRequest(Resource.Type.RAM, 5, shared=False),
         ]
         vm0 = VirtualMachine("vm0", resourceReq0)
         m0.allocateVM(vm0)
@@ -63,25 +63,25 @@ class VirtualizationTests(SimulatorTests):
         m0 = Machine("m0", resources)
         resourceReq0 = {
             ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
-            ResourceRequest(Resource.Type.RAM, 8),
+            ResourceRequest(Resource.Type.RAM, 8, shared=False),
         }
         vm0 = VirtualMachine("vm0", resourceReq0)
         resourceReq1 = {
             ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
-            ResourceRequest(Resource.Type.RAM, 8),
+            ResourceRequest(Resource.Type.RAM, 8, shared=False),
         }
         vm1 = VirtualMachine("vm1", resourceReq0)
         m0.allocateVM(vm0)
         m0.allocateVM(vm1)
 
         job0 = Job(100,
-                   [ResourceRequest(Resource.Type.CPU_core, inf),
-                    ResourceRequest(Resource.Type.RAM, 5)],
+                   [ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
+                    ResourceRequest(Resource.Type.RAM, 5, shared=False)],
                    vm0
                )
         job1 = Job(100,
-                   [ResourceRequest(Resource.Type.CPU_core, inf),
-                    ResourceRequest(Resource.Type.RAM, 5)],
+                   [ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
+                    ResourceRequest(Resource.Type.RAM, 5, shared=False)],
                    vm1
                )
 

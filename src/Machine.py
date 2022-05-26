@@ -71,7 +71,7 @@ class Machine:
     def allocate(self, job):
         for req in job.resourceRequest:
             resource = self.getBestFitting(req.rtype, req.value)
-            resource.allocate(req.value, job)
+            resource.allocate(req, job)
         self.jobsRunning.add(job)
 
     def free(self, job):
@@ -101,7 +101,7 @@ class Machine:
             srcRes = self.getBestFitting(req.rtype, req.value, excluded=usedRes)
             if req.value == INF and req.shared is False:
                 req.value = srcRes.avaliableValue
-            dstRes = srcRes.withold(req.value)
+            dstRes = srcRes.withold(req)
             usedRes += [srcRes]
             srcRes.vmsUsing.add(vm)
             srcResMap[dstRes] = srcRes

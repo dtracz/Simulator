@@ -4,9 +4,11 @@ from Events import *
 
 
 class ResourceRequest:
-    def __init__(self, rtype, value, shared=False):
+    def __init__(self, rtype, value, shared=True):
         if value <= 0:
             raise Exception(f"Cannot request {rtype} of value {value}")
+        if value != INF:
+            shared = False
         self.rtype = rtype
         self.value = value
         self.shared = shared
@@ -52,8 +54,8 @@ class Resource:
             noDynamic += job.obtainedRes[id(self)] is self
         return noDynamic
 
-    def allocate(self, requestedValue, job):
-        resource = self.withold(requestedValue)
+    def allocate(self, req, job):
+        resource = self.withold(req)
         job.obtainedRes[id(self)] = resource
         self.jobsUsing.add(job)
 
@@ -70,13 +72,15 @@ class Resource:
             noDynamic += job.obtainedRes[id(self)] is self
         return noDynamic
 
-    def withold(self, value):
+    def withold(self, req):
         resource = None
-        if value == INF:
+        if req.shared:
             self.value = self.tmpMaxValue / (self.noDynamicJobs + 1)
             resource = self
-        elif value > self.tmpMaxValue: raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
         else:
+            value = self.tmpMaxValue if req.value is INF else req.value
+            if value > self.tmpMaxValue:
+                raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
             self.tmpMaxValue -= value
             self.value = self.tmpMaxValue / max(self.noDynamicJobs, 1)
             resource = Resource(self.rtype, value)
