@@ -51,7 +51,10 @@ class Resource:
     def noDynamicJobs(self):
         noDynamic = 0
         for job in self.jobsUsing:
-            for req, (srcRes, dstRes) in job._resourceRequest:
+            for req, x in job._resourceRequest.items():
+                if x is None:
+                    continue
+                (srcRes, dstRes) = x
                 noDynamic += dstRes is self
         return noDynamic
 
@@ -69,17 +72,6 @@ class Resource:
                 self.release(dstRes)
                 job._resourceRequest[req] = None
                 self.jobsUsing.remove(job)
-
-    @property
-    def noDynamicJobs(self):
-        noDynamic = 0
-        for job in self.jobsUsing:
-            for req, x in job._resourceRequest.items():
-                if x is None:
-                    continue
-                (srcRes, dstRes) = x
-                noDynamic += dstRes is self
-        return noDynamic
 
     def withold(self, req):
         resource = None
