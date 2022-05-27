@@ -40,8 +40,24 @@ class Resource:
         self.maxValue = value
         self.tmpMaxValue = value
         self.value = value
-        self.jobsUsing = set()
+        self.users = {}
+        #  self.jobsUsing = set()
         self.vmsUsing = set()
+
+    def addUser(self, user):
+        if type(user) not in self.users.keys():
+            self.users[type(user)] = set()
+        self.users[type(user)].add(user)
+
+    def delUser(self, user):
+        self.users[type(user)].remove(user)
+
+    @property
+    def jobsUsing(self):
+        for key, val in self.users.items():
+            if str(key) == "<class 'Job.Job'>":
+                return val
+        return set()
 
     @property
     def avaliableValue(self):
@@ -61,7 +77,7 @@ class Resource:
     def allocate(self, req, job):
         resource = self.withold(req)
         job.setResources({req: (self, resource)})
-        self.jobsUsing.add(job)
+        self.addUser(job)
 
     def free(self, job):
         for req, x in job._resourceRequest.items():
@@ -71,7 +87,7 @@ class Resource:
             if srcRes == self:
                 self.release(dstRes)
                 job._resourceRequest[req] = None
-                self.jobsUsing.remove(job)
+                self.delUser(job)
 
     def withold(self, req):
         resource = None
