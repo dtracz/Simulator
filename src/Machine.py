@@ -75,9 +75,10 @@ class Machine:
         self.jobsRunning.add(job)
 
     def free(self, job):
-        for resource in self._resources:
-            if job in resource.jobsUsing:
-                resource.free(job)
+        for srcRes, dstRes in job.unsetResources():
+            assert srcRes in self._resources
+            srcRes.release(dstRes)
+            srcRes.delUser(job)
         self.jobsRunning.remove(job)
 
     def scheduleJob(self, job):

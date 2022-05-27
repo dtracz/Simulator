@@ -79,16 +79,6 @@ class Resource:
         job.setResources({req: (self, resource)})
         self.addUser(job)
 
-    def free(self, job):
-        for req, x in job._resourceRequest.items():
-            if x is None:
-                continue
-            (srcRes, dstRes) = x
-            if srcRes == self:
-                self.release(dstRes)
-                job._resourceRequest[req] = None
-                self.delUser(job)
-
     def withold(self, req):
         resource = None
         if req.shared:
