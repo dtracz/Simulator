@@ -51,25 +51,34 @@ class Resource:
     def noDynamicJobs(self):
         noDynamic = 0
         for job in self.jobsUsing:
-            noDynamic += job.obtainedRes[id(self)] is self
+            for req, (srcRes, dstRes) in job._resourceRequest:
+                noDynamic += dstRes is self
         return noDynamic
 
     def allocate(self, req, job):
         resource = self.withold(req)
-        job.obtainedRes[id(self)] = resource
+        job.setResources({req: (self, resource)})
         self.jobsUsing.add(job)
 
     def free(self, job):
-        resource = job.obtainedRes[id(self)]
-        self.release(resource)
-        del job.obtainedRes[id(self)]
-        self.jobsUsing.remove(job)
+        for req, x in job._resourceRequest.items():
+            if x is None:
+                continue
+            (srcRes, dstRes) = x
+            if srcRes == self:
+                self.release(dstRes)
+                job._resourceRequest[req] = None
+                self.jobsUsing.remove(job)
 
     @property
     def noDynamicJobs(self):
         noDynamic = 0
         for job in self.jobsUsing:
-            noDynamic += job.obtainedRes[id(self)] is self
+            for req, x in job._resourceRequest.items():
+                if x is None:
+                    continue
+                (srcRes, dstRes) = x
+                noDynamic += dstRes is self
         return noDynamic
 
     def withold(self, req):
@@ -130,13 +139,13 @@ class ResourcesHolder:
         return [dstRes for srcRes, dstRes in self._resourceRequest.values()]
 
     def setResources(self, reqResMap):
-        for req, (srcRes, dstRes) in reqResMap:
+        for req, (srcRes, dstRes) in reqResMap.items():
             self._resourceRequest[req] = (srcRes, dstRes)
-        noUnsatisfied = sum(res is None for res in self._resourceRequest.values)
+        noUnsatisfied = sum(res is None for res in self._resourceRequest.values())
         return noUnsatisfied
 
     def unsetResources(self):
-        for req, (srcRes, dstRes) in self._resourceRequest:
+        for req, (srcRes, dstRes) in self._resourceRequest.items():
             self._resourceRequest[req] = None
             yield (srcRes, dstRes)
 
