@@ -113,3 +113,30 @@ class Resource:
     def __hash__(self):
         return id(self)
 
+
+
+class ResourcesHolder:
+    def __init__(self, resourceRequest):
+        self._resourceRequest = {} # {req: (srcRes, dstRes)}
+        for req in resourceRequest:
+            self._resourceRequest[req] = None
+
+    @property
+    def resourceRequest(self):
+        return list(self._resourceRequest.keys())
+
+    @property
+    def obtainedRes(self):
+        return [dstRes for srcRes, dstRes in self._resourceRequest.values()]
+
+    def setResources(self, reqResMap):
+        for req, (srcRes, dstRes) in reqResMap:
+            self._resourceRequest[req] = (srcRes, dstRes)
+        noUnsatisfied = sum(res is None for res in self._resourceRequest.values)
+        return noUnsatisfied
+
+    def unsetResources(self):
+        for req, (srcRes, dstRes) in self._resourceRequest:
+            self._resourceRequest[req] = None
+            yield (srcRes, dstRes)
+
