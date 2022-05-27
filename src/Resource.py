@@ -74,11 +74,6 @@ class Resource:
                 noDynamic += dstRes is self
         return noDynamic
 
-    def allocate(self, req, job):
-        resource = self.withold(req)
-        job.setResources({req: (self, resource)})
-        self.addUser(job)
-
     def withold(self, req):
         resource = None
         if req.shared:

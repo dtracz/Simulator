@@ -69,9 +69,19 @@ class Machine:
         raise RuntimeError(f"Cannot find fitting {rtype}")
 
     def allocate(self, job):
-        for req in job.resourceRequest:
-            resource = self.getBestFitting(req.rtype, req.value)
-            resource.allocate(req, job)
+        reqResMap = {}
+        try:
+            for req in job.resourceRequest:
+                srcRes = self.getBestFitting(req.rtype, req.value)
+                dstRes = srcRes.withold(req)
+                reqResMap[req] = (srcRes, dstRes)
+                srcRes.addUser(job)
+        except:
+            for srcRes, dstRes in reqResMap.values():
+                srcRes.release(dstRes)
+                srcRes.delUser(job)
+            raise RuntimeError(f"Resources allocation for {job.name} failed")
+        job.setResources(reqResMap)
         self.jobsRunning.add(job)
 
     def free(self, job):
