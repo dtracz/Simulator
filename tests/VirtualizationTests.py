@@ -23,12 +23,12 @@ class VirtualizationTests(SimulatorTests):
         ]
         vm0 = VirtualMachine("vm0", resourceReq0)
         m0.allocateVM(vm0)
-        assert m0._resources[0].avaliableValue == 0
-        assert m0._resources[1].avaliableValue == 0
-        assert m0._resources[2].avaliableValue == 11
-        assert vm0._resources[0].maxValue == 10
-        assert vm0._resources[1].maxValue == 10
-        assert vm0._resources[2].maxValue == 5
+        assert m0.resources[0].avaliableValue == 0
+        assert m0.resources[1].avaliableValue == 0
+        assert m0.resources[2].avaliableValue == 11
+        assert vm0.resources[0].maxValue == 10
+        assert vm0.resources[1].maxValue == 10
+        assert vm0.resources[2].maxValue == 5
 
     def test_freeVM(self):
         inf = INF
@@ -46,12 +46,12 @@ class VirtualizationTests(SimulatorTests):
         vm0 = VirtualMachine("vm0", resourceReq0)
         m0.allocateVM(vm0)
         m0.freeVM(vm0)
-        assert m0._resources[0].avaliableValue == 10
-        assert isinstance(m0._resources[0], Resource)
-        assert m0._resources[1].avaliableValue == 10
-        assert isinstance(m0._resources[1], Resource)
-        assert m0._resources[2].avaliableValue == 16
-        assert 0 == len(vm0._resources)
+        assert m0.resources[0].avaliableValue == 10
+        assert isinstance(m0.resources[0], Resource)
+        assert m0.resources[1].avaliableValue == 10
+        assert isinstance(m0.resources[1], Resource)
+        assert m0.resources[2].avaliableValue == 16
+        assert 0 == len(vm0.resources)
 
 
     def test_2jobsOn2VMs(self):

@@ -44,7 +44,7 @@ class Machine:
                  getVMScheduler=lambda _: None):
         self._index = Machine._noCreated
         self.name = name
-        self._resources = resources #self.makeResources(resources)
+        self._resources = resources
         self._hostedVMs = set()
         self.jobsRunning = set()
         self._jobScheduler = getJobScheduler(self)
@@ -52,12 +52,16 @@ class Machine:
         Machine._noCreated += 1
 
     @property
+    def resources(self):
+        return self._resources
+
+    @property
     def maxResources(self):
-        for res in self._resources:
+        for res in self.resources:
             yield (res.rtype, res.maxValue)
 
     def getBestFitting(self, rtype, value, excluded=[]):
-        allRes = list(filter(lambda r: r.rtype == rtype, self._resources))
+        allRes = list(filter(lambda r: r.rtype == rtype, self.resources))
         if value == INF:
             f = lambda r: r.maxValue/(1 + r.noDynamicUses + len(r.vmsUsing))
             return max(allRes, key=f)
@@ -97,7 +101,7 @@ class Machine:
 
     def free(self, job):
         for srcRes, dstRes in job.unsetResources():
-            assert srcRes in self._resources
+            assert srcRes in self.resources
             srcRes.release(dstRes)
             srcRes.delUser(job)
         self.jobsRunning.remove(job)
@@ -136,7 +140,7 @@ class Machine:
             raise Exception("This vm is allocated on a different machine")
         resources = vm.unsetResources()
         for res, srcRes in resources.items():
-            if srcRes not in self._resources:
+            if srcRes not in self.resources:
                 raise Exception("Resource not found")
             srcRes.release(res)
             srcRes.vmsUsing.remove(vm)
@@ -156,7 +160,7 @@ class Machine:
 
 
 
-class VirtualMachine(Machine):
+class VirtualMachine(Machine, ResourcesHolder):
     """
     Machine, that could be allocated on other machines,
     ald use part of it's resources to run jobs.
@@ -165,10 +169,9 @@ class VirtualMachine(Machine):
                  getJobScheduler=lambda _: None,
                  getVMScheduler=lambda _: None,
                  host=None):
-        super().__init__(name, {}, getJobScheduler, getVMScheduler)
+        Machine.__init__(self, name, [], getJobScheduler, getVMScheduler)
+        ResourcesHolder.__init__(self, resourceRequest)
         self.host = host
-        self.resourceRequest = resourceRequest
-        self._resources = []
         self._srcResMap = {}
 
     @property
