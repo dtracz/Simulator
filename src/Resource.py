@@ -1,4 +1,5 @@
 from enum import Enum
+from multiset import Multiset
 from toolkit import *
 from Events import *
 
@@ -40,23 +41,24 @@ class Resource:
         self.maxValue = value
         self.tmpMaxValue = value
         self.value = value
-        self.users = {}
-        #  self.jobsUsing = set()
+        self._users = {}
         self.vmsUsing = set()
 
     def addUser(self, user):
-        if type(user) not in self.users.keys():
-            self.users[type(user)] = set()
-        self.users[type(user)].add(user)
+        if type(user) not in self._users.keys():
+            self._users[type(user)] = Multiset()
+        self._users[type(user)].add(user)
 
     def delUser(self, user):
-        self.users[type(user)].remove(user)
+        self._users[type(user)].remove(user)
+        if len(self._users[type(user)]) == 0:
+            del self._users[type(user)]
 
     @property
     def jobsUsing(self):
-        for key, val in self.users.items():
+        for key, val in self._users.items():
             if str(key) == "<class 'Job.Job'>":
-                return val
+                return set(val)
         return set()
 
     @property
@@ -64,7 +66,7 @@ class Resource:
         return self.tmpMaxValue
 
     @property
-    def noDynamicJobs(self):
+    def noDynamicUses(self):
         noDynamic = 0
         for job in self.jobsUsing:
             for req, x in job._resourceRequest.items():
@@ -77,26 +79,26 @@ class Resource:
     def withold(self, req):
         resource = None
         if req.shared:
-            self.value = self.tmpMaxValue / (self.noDynamicJobs + 1)
+            self.value = self.tmpMaxValue / (self.noDynamicUses + 1)
             resource = self
         else:
             value = self.tmpMaxValue if req.value is INF else req.value
             if value > self.tmpMaxValue:
                 raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
             self.tmpMaxValue -= value
-            self.value = self.tmpMaxValue / max(self.noDynamicJobs, 1)
+            self.value = self.tmpMaxValue / max(self.noDynamicUses, 1)
             resource = Resource(self.rtype, value)
         self.recalculateJobs()
         return resource
 
     def release(self, resource):
         if resource is self:
-            self.value = self.tmpMaxValue / max(1, self.noDynamicJobs - 1)
+            self.value = self.tmpMaxValue / max(1, self.noDynamicUses - 1)
         elif self.tmpMaxValue + resource.value > self.maxValue + EPS:
             raise RuntimeError("Resource overflow after release")
         else:
             self.tmpMaxValue = min(self.tmpMaxValue + resource.value, self.maxValue)
-            self.value = self.tmpMaxValue / max(self.noDynamicJobs, 1)
+            self.value = self.tmpMaxValue / max(self.noDynamicUses, 1)
         self.recalculateJobs()
 
     def recalculateJobs(self):
