@@ -42,7 +42,7 @@ class Resource:
         self.tmpMaxValue = value
         self.value = value
         self._users = {}
-        self.vmsUsing = set()
+        #  self.vmsUsing = set()
 
     def addUser(self, user):
         if type(user) not in self._users.keys():
@@ -58,6 +58,13 @@ class Resource:
     def jobsUsing(self):
         for key, val in self._users.items():
             if str(key) == "<class 'Job.Job'>":
+                return set(val)
+        return set()
+
+    @property
+    def vmsUsing(self):
+        for key, val in self._users.items():
+            if str(key) == "<class 'Machine.VirtualMachine'>":
                 return set(val)
         return set()
 
@@ -131,7 +138,8 @@ class ResourcesHolder:
 
     @property
     def obtainedRes(self):
-        return [dstRes for srcRes, dstRes in self._resourceRequest.values()]
+        resPairs = filter(lambda x: x is not None, self._resourceRequest.values())
+        return [dstRes for srcRes, dstRes in resPairs]
 
     def setResources(self, reqResMap):
         for req, (srcRes, dstRes) in reqResMap.items():

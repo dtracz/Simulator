@@ -71,40 +71,46 @@ class Machine:
                 return res
         raise RuntimeError(f"Cannot find fitting {rtype}")
 
-    def allocate(self, job):
+    def allocate(self, resHolder):
         #  reqResMap = {}
         try:
-            for req in filter(lambda r: not r.shared, job.resourceRequest):
+            for req in filter(lambda r: not r.shared, resHolder.resourceRequest):
                 srcRes = self.getBestFitting(req.rtype, req.value)
                 dstRes = srcRes.withold(req)
                 #  reqResMap[req] = (srcRes, dstRes)
-                job._resourceRequest[req] = (srcRes, dstRes)
-                srcRes.addUser(job)
-            for req in filter(lambda r: r.shared, job.resourceRequest):
+                resHolder._resourceRequest[req] = (srcRes, dstRes)
+                srcRes.addUser(resHolder)
+            for req in filter(lambda r: r.shared, resHolder.resourceRequest):
                 srcRes = self.getBestFitting(req.rtype, req.value)
                 dstRes = srcRes.withold(req)
                 #  reqResMap[req] = (srcRes, dstRes)
-                job._resourceRequest[req] = (srcRes, dstRes)
-                srcRes.addUser(job)
+                resHolder._resourceRequest[req] = (srcRes, dstRes)
+                srcRes.addUser(resHolder)
         except:
             #  for srcRes, dstRes in reqResMap.values():
-            for req, x in job._resourceRequest.items():
+            for req, x in resHolder._resourceRequest.items():
                 if x is None:
                     continue
                 (srcRes, dstRes) = x
                 srcRes.release(dstRes)
-                srcRes.delUser(job)
-                job._resourceRequest[req] = None
-            raise RuntimeError(f"Resources allocation for {job.name} failed")
+                srcRes.delUser(resHolder)
+                resHolder._resourceRequest[req] = None
+            raise RuntimeError(f"Resources allocation for {resHolder.name} failed")
         #  job.setResources(reqResMap)
-        self.jobsRunning.add(job)
+        if isinstance(resHolder, VirtualMachine):
+            self._hostedVMs.add(resHolder)
+        else:
+            self.jobsRunning.add(resHolder)
 
-    def free(self, job):
-        for srcRes, dstRes in job.unsetResources():
+    def free(self, resHolder):
+        for srcRes, dstRes in resHolder.unsetResources():
             assert srcRes in self.resources
             srcRes.release(dstRes)
-            srcRes.delUser(job)
-        self.jobsRunning.remove(job)
+            srcRes.delUser(resHolder)
+        if isinstance(resHolder, VirtualMachine):
+            self._hostedVMs.add(resHolder)
+        else:
+            self.jobsRunning.remove(resHolder)
 
     def scheduleJob(self, job):
         if self._jobScheduler is None:
@@ -121,30 +127,13 @@ class Machine:
             raise Exception("Wrong host for given virtual machine")
         if vm in self._hostedVMs:
             raise Exception("This vm is already allocated")
-        usedRes = []
-        srcResMap = {}
-        for req in vm.resourceRequest:
-            srcRes = self.getBestFitting(req.rtype, req.value, excluded=usedRes)
-            if req.value == INF and req.shared is False:
-                req.value = srcRes.avaliableValue
-            dstRes = srcRes.withold(req)
-            usedRes += [srcRes]
-            srcRes.vmsUsing.add(vm)
-            srcResMap[dstRes] = srcRes
+        self.allocate(vm)
         vm.host = self
-        vm.setResources(srcResMap)
-        self._hostedVMs.add(vm)
 
     def freeVM(self, vm):
         if vm not in self._hostedVMs:
             raise Exception("This vm is allocated on a different machine")
-        resources = vm.unsetResources()
-        for res, srcRes in resources.items():
-            if srcRes not in self.resources:
-                raise Exception("Resource not found")
-            srcRes.release(res)
-            srcRes.vmsUsing.remove(vm)
-        self._hostedVMs.remove(vm)
+        self.free(vm)
         vm.host = None
 
     def __lt__(self, other):
@@ -165,7 +154,7 @@ class VirtualMachine(Machine, ResourcesHolder):
     Machine, that could be allocated on other machines,
     ald use part of it's resources to run jobs.
     """
-    def __init__(self, name, resourceRequest=None,
+    def __init__(self, name, resourceRequest={},
                  getJobScheduler=lambda _: None,
                  getVMScheduler=lambda _: None,
                  host=None):
@@ -173,6 +162,11 @@ class VirtualMachine(Machine, ResourcesHolder):
         ResourcesHolder.__init__(self, resourceRequest)
         self.host = host
         self._srcResMap = {}
+        #  self.resourceRequest = resourceRequest
+
+    @property
+    def resources(self):
+        return self.obtainedRes
 
     @property
     def maxResources(self):
@@ -183,15 +177,4 @@ class VirtualMachine(Machine, ResourcesHolder):
             for req in self.resourceRequest:
                 # TODO: request value of `inf`
                 yield (req.rtype, req.value)
-
-    def setResources(self, srcResMap):
-        for res in srcResMap:
-            self._resources += [res]
-        self._srcResMap = srcResMap
-
-    def unsetResources(self):
-        srcResMap = self._srcResMap
-        self._srcResMap = {}
-        self._resources.clear()
-        return srcResMap
 
