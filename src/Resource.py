@@ -50,7 +50,7 @@ class Resource:
         self._users[type(user)].add(user)
 
     def delUser(self, user):
-        self._users[type(user)].remove(user)
+        self._users[type(user)].remove(user, 1)
         if len(self._users[type(user)]) == 0:
             del self._users[type(user)]
 
@@ -104,7 +104,7 @@ class Resource:
     def recalculateJobs(self):
         now = Simulator.getInstance().time
         for job in self.jobsUsing:
-            if job.operationsLeft == 0:
+            if job.operationsLeft < EPS:
                 continue
             jobRecalculate = JobRecalculate(job)
             Simulator.getInstance().addEvent(now, jobRecalculate)

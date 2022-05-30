@@ -59,8 +59,7 @@ class Machine:
     def getBestFitting(self, rtype, value, excluded=[]):
         allRes = list(filter(lambda r: r.rtype == rtype, self._resources))
         if value == INF:
-            allRes = list(filter(lambda r: r.rtype == rtype, self._resources))
-            f = lambda r: r.maxValue/(1 + len(r.jobsUsing) + len(r.vmsUsing))
+            f = lambda r: r.maxValue/(1 + r.noDynamicUses + len(r.vmsUsing))
             return max(allRes, key=f)
         allRes.sort(key=lambda r: r.value)
         for res in allRes:
@@ -69,19 +68,31 @@ class Machine:
         raise RuntimeError(f"Cannot find fitting {rtype}")
 
     def allocate(self, job):
-        reqResMap = {}
+        #  reqResMap = {}
         try:
-            for req in job.resourceRequest:
+            for req in filter(lambda r: not r.shared, job.resourceRequest):
                 srcRes = self.getBestFitting(req.rtype, req.value)
                 dstRes = srcRes.withold(req)
-                reqResMap[req] = (srcRes, dstRes)
+                #  reqResMap[req] = (srcRes, dstRes)
+                job._resourceRequest[req] = (srcRes, dstRes)
+                srcRes.addUser(job)
+            for req in filter(lambda r: r.shared, job.resourceRequest):
+                srcRes = self.getBestFitting(req.rtype, req.value)
+                dstRes = srcRes.withold(req)
+                #  reqResMap[req] = (srcRes, dstRes)
+                job._resourceRequest[req] = (srcRes, dstRes)
                 srcRes.addUser(job)
         except:
-            for srcRes, dstRes in reqResMap.values():
+            #  for srcRes, dstRes in reqResMap.values():
+            for req, x in job._resourceRequest.items():
+                if x is None:
+                    continue
+                (srcRes, dstRes) = x
                 srcRes.release(dstRes)
                 srcRes.delUser(job)
+                job._resourceRequest[req] = None
             raise RuntimeError(f"Resources allocation for {job.name} failed")
-        job.setResources(reqResMap)
+        #  job.setResources(reqResMap)
         self.jobsRunning.add(job)
 
     def free(self, job):
