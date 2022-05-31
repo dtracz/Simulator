@@ -45,13 +45,13 @@ class VMSchedulerSimple(NotificationListener):
         self._vmQueue += [vm]
 
     def notify(self, event):
-        if event.name == "SimulationStart":
-            self._tryAllocate()
         if isinstance(event, VMStart) and \
            event.host == self._machine:
             self._tryAllocate()
         if isinstance(event, VMEnd) and \
            event.host == self._machine:
+            self._tryAllocate()
+        if event.name == "SimulationStart":
             self._tryAllocate()
 
 
@@ -146,6 +146,8 @@ class JobSchedulerSimple(NotificationListener):
             self._tryRunNext()
         if isinstance(event, VMStart) and \
            event.vm == self._machine:
+            self._tryRunNext()
+        if event.name == "SimulationStart":
             self._tryRunNext()
 
 

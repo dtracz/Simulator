@@ -15,37 +15,30 @@ class SchedulersTests(SimulatorTests):
             Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         }
-        m0 = Machine("m0", resources)
-
-        resourceReq0 = {
-            ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
-            ResourceRequest(Resource.Type.RAM, inf),
-        }
-        vm0 = VirtualMachine("vm0", resourceReq0,
-                lambda machine: JobSchedulerSimple(machine, autofree=True))
+        m0 = Machine("m0", resources,
+            getJobScheduler=lambda m: JobSchedulerSimple(m, autofree=True))
 
         job0 = Job(500,
                    [ResourceRequest(Resource.Type.CPU_core, inf),
                     ResourceRequest(Resource.Type.RAM, 8)],
-                   vm0
+                   m0
                )
         job1 = Job(1000,
                    [ResourceRequest(Resource.Type.CPU_core, inf),
                     ResourceRequest(Resource.Type.RAM, 6)],
-                   vm0
+                   m0
                )
         job2 = Job(1000,
                    [ResourceRequest(Resource.Type.CPU_core, inf),
                     ResourceRequest(Resource.Type.RAM, 6)],
-                   vm0
+                   m0
                )
 
-        vm0.scheduleJob(job0)
-        vm0.scheduleJob(job1)
-        vm0.scheduleJob(job2)
+        m0.scheduleJob(job0)
+        m0.scheduleJob(job1)
+        m0.scheduleJob(job2)
 
         sim = Simulator.getInstance()
-        sim.addEvent(0, VMStart(m0, vm0))
         sim.simulate()
 
         assert sim.time == 250
