@@ -83,7 +83,7 @@ class VMStart(Event):
         self.vm = vm
 
     def proceed(self):
-        self.host.allocateVM(self.vm)
+        self.host.allocate(self.vm)
 
 
 
@@ -94,6 +94,6 @@ class VMEnd(Event):
         self.vm = vm
 
     def proceed(self):
-        self.host.freeVM(self.vm)
+        self.host.free(self.vm)
 
 

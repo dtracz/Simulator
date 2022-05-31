@@ -1,6 +1,10 @@
 from sortedcontainers import SortedDict, SortedSet
 
 
+INF = float('inf')
+EPS = 1e-10
+
+
 class MultiDictRevDict:
     """
     Bidirectional map with multiple value per one key feature

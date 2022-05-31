@@ -6,12 +6,12 @@ from Machine import *
 from Job import *
 
 
-class SharedResourceTests(SimulatorTests):
+class ResourceTests(SimulatorTests):
 
     def test_1coreSimple(self):
-        inf = float('inf')
+        inf = INF
         resources = {
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)
@@ -36,10 +36,10 @@ class SharedResourceTests(SimulatorTests):
 
 
     def test_1vs2(self):
-        inf = float('inf')
+        inf = INF
         resources = {
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)
@@ -65,9 +65,9 @@ class SharedResourceTests(SimulatorTests):
 
 
     def test_witholdFromShared(self):
-        inf = float('inf')
+        inf = INF
         resources = {
-            SharedResource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.CPU_core, 10), # GHz
             Resource(Resource.Type.RAM, 16),            # GB
         }
         m0 = Machine("m0", resources)

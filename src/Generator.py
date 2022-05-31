@@ -13,7 +13,7 @@ class JobGenerator(metaclass=ABCMeta):
     def createJob(operations, noCores, ramSize, machine=None):
         req = [ResourceRequest(Resource.Type.RAM, ramSize)]
         for _ in range(noCores):
-            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'))]
+            req += [ResourceRequest(Resource.Type.CPU_core, INF)]
         return Job(operations, req, machine)
 
     @abstractmethod
@@ -89,7 +89,7 @@ class CreateVM:
 
     @staticmethod
     def minimal(jobs,
-                coreLimit=float('inf'),
+                coreLimit=INF,
                 scheduler=lambda m: JobSchedulerSimple(m, autofree=True),
                ):
         name = "vm_for"
@@ -109,7 +109,7 @@ class CreateVM:
         noCores = min(noCores, coreLimit)
         req = [ResourceRequest(Resource.Type.RAM, ramSize)]
         for _ in range(noCores):
-            req += [ResourceRequest(Resource.Type.CPU_core, float('inf'), shared=True)]
+            req += [ResourceRequest(Resource.Type.CPU_core, INF, shared=True)]
         vm = VirtualMachine(name, req, scheduler)
         return vm
 

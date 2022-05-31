@@ -3,15 +3,15 @@ from Simulator import *
 from Resource import *
 
 
-class Job:
+class Job(ResourcesHolder):
     """
     Job structure. Contains all information about job
     and provides mothods of it's procedure and maintenance.
     """
     _noCreated = 0
-    _eps = 1e-10
 
-    def __init__(self, operations, resourceRequest=None, machine=None, name=None):
+    def __init__(self, operations, resourceRequest, machine=None, name=None):
+        super().__init__(resourceRequest)
         self._index = Job._noCreated
         if (name is None):
             name = f"Job_{self._index}"
@@ -19,17 +19,12 @@ class Job:
         self.machine = machine
         self.operations = operations
         self.operationsLeft = operations
-        self.resourceRequest = resourceRequest
-        self.obtainedRes = {}
         self.predictedFinish = None
         self._updates = [] # [(time, speed)]
         Job._noCreated += 1
 
     def asignMachine(self, machine):
         self.machine = machine
-
-    def asignResources(self, resources):
-        self.resourceRequest = resources
 
     def allocateResources(self):
         if self.machine == None:
@@ -43,7 +38,7 @@ class Job:
 
     def getCurrentSpeed(self):
         totalFrequency = 0
-        for resource in self.obtainedRes.values():
+        for resource in self.obtainedRes:
             if resource.rtype == Resource.Type.CPU_core:
                 totalFrequency += resource.value
         return totalFrequency
@@ -63,7 +58,7 @@ class Job:
         speed = self._updates[-1][1]
         opsDone = (time - startTime) * speed
         self.operationsLeft -= min(self.operationsLeft, opsDone)
-        if self.operationsLeft < Job._eps:
+        if self.operationsLeft < EPS:
             self.operationsLeft = 0
         return opsDone
 
