@@ -45,11 +45,34 @@ class Machine:
         self._index = Machine._noCreated
         self.name = name
         self._resources = resources
-        self._hostedVMs = set()
-        self.jobsRunning = set()
         self._jobScheduler = getJobScheduler(self)
         self._vmScheduler = getVMScheduler(self)
         Machine._noCreated += 1
+        self._users = {}
+
+    def addUser(self, user):
+        if type(user) not in self._users.keys():
+            self._users[type(user)] = Multiset()
+        self._users[type(user)].add(user)
+
+    def delUser(self, user):
+        self._users[type(user)].remove(user, 1)
+        if len(self._users[type(user)]) == 0:
+            del self._users[type(user)]
+
+    @property
+    def jobsUsing(self):
+        for key, val in self._users.items():
+            if str(key) == "<class 'Job.Job'>":
+                return set(val)
+        return set()
+
+    @property
+    def vmsUsing(self):
+        for key, val in self._users.items():
+            if str(key) == "<class 'Machine.VirtualMachine'>":
+                return set(val)
+        return set()
 
     @property
     def resources(self):
@@ -72,6 +95,8 @@ class Machine:
         raise RuntimeError(f"Cannot find fitting {rtype}")
 
     def allocate(self, resHolder):
+        if resHolder.isAllocated:
+            raise Exception(f"{resHolder.name} is already allocated")
         #  reqResMap = {}
         try:
             for req in filter(lambda r: not r.shared, resHolder.resourceRequest):
@@ -96,21 +121,22 @@ class Machine:
                 srcRes.delUser(resHolder)
                 resHolder._resourceRequest[req] = None
             raise RuntimeError(f"Resources allocation for {resHolder.name} failed")
+        assert resHolder.isAllocated == 1
         #  job.setResources(reqResMap)
-        if isinstance(resHolder, VirtualMachine):
-            self._hostedVMs.add(resHolder)
-        else:
-            self.jobsRunning.add(resHolder)
+        self.addUser(resHolder)
+        resHolder.host = self
 
     def free(self, resHolder):
+        if type(resHolder) not in self._users.keys() or \
+           resHolder not in self._users[type(resHolder)]:
+            raise Exception(f"{resHolder.name} is not allocated on this machine")
         for srcRes, dstRes in resHolder.unsetResources():
             assert srcRes in self.resources
             srcRes.release(dstRes)
             srcRes.delUser(resHolder)
-        if isinstance(resHolder, VirtualMachine):
-            self._hostedVMs.add(resHolder)
-        else:
-            self.jobsRunning.remove(resHolder)
+        assert resHolder.isAllocated == 0
+        self.delUser(resHolder)
+        resHolder.host = None
 
     def scheduleJob(self, job):
         if self._jobScheduler is None:
@@ -121,20 +147,6 @@ class Machine:
         if self._vmScheduler is None:
             raise Exception(f"Machine {self.name} has no VM scheduler")
         self._vmScheduler.schedule(job)
-
-    def allocateVM(self, vm):
-        if vm.host != self and vm.host is not None:
-            raise Exception("Wrong host for given virtual machine")
-        if vm in self._hostedVMs:
-            raise Exception("This vm is already allocated")
-        self.allocate(vm)
-        vm.host = self
-
-    def freeVM(self, vm):
-        if vm not in self._hostedVMs:
-            raise Exception("This vm is allocated on a different machine")
-        self.free(vm)
-        vm.host = None
 
     def __lt__(self, other):
         return self._index < other._index

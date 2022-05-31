@@ -22,7 +22,7 @@ class VirtualizationTests(SimulatorTests):
             ResourceRequest(Resource.Type.RAM, 5, shared=False),
         ]
         vm0 = VirtualMachine("vm0", resourceReq0)
-        m0.allocateVM(vm0)
+        m0.allocate(vm0)
         assert m0.resources[0].avaliableValue == 0
         assert m0.resources[1].avaliableValue == 0
         assert m0.resources[2].avaliableValue == 11
@@ -44,8 +44,8 @@ class VirtualizationTests(SimulatorTests):
             ResourceRequest(Resource.Type.RAM, 5, shared=False),
         ]
         vm0 = VirtualMachine("vm0", resourceReq0)
-        m0.allocateVM(vm0)
-        m0.freeVM(vm0)
+        m0.allocate(vm0)
+        m0.free(vm0)
         assert m0.resources[0].avaliableValue == 10
         assert isinstance(m0.resources[0], Resource)
         assert m0.resources[1].avaliableValue == 10
@@ -71,8 +71,8 @@ class VirtualizationTests(SimulatorTests):
             ResourceRequest(Resource.Type.RAM, 8, shared=False),
         }
         vm1 = VirtualMachine("vm1", resourceReq0)
-        m0.allocateVM(vm0)
-        m0.allocateVM(vm1)
+        m0.allocate(vm0)
+        m0.allocate(vm1)
 
         job0 = Job(100,
                    [ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
@@ -97,8 +97,8 @@ class VirtualizationTests(SimulatorTests):
         sim.simulate()
         inspector.verify()
 
-        m0.freeVM(vm0)
-        m0.freeVM(vm1)
+        m0.free(vm0)
+        m0.free(vm1)
 
 
     def test_2coresVmOn1coresMachine(self):

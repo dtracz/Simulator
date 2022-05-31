@@ -103,7 +103,8 @@ class JobSchedulerSimple(NotificationListener):
     def _autoFreeHost(self):
         if not self._finished and self._autofree and \
            len(self._jobQueue) == 0 and \
-           len(self._machine.jobsRunning) == 0:
+           len(self._machine.jobsUsing) == 0 and \
+           len(self._machine.vmsUsing) == 0:
             now = Simulator.getInstance().time
             event = VMEnd(self._machine.host, self._machine)
             Simulator.getInstance().addEvent(now, event)

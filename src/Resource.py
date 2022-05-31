@@ -131,6 +131,13 @@ class ResourcesHolder:
         self._resourceRequest = {} # {req: (srcRes, dstRes)}
         for req in resourceRequest:
             self._resourceRequest[req] = None
+        self.host = None
+
+    @property
+    def isAllocated(self):
+        noAllocated = len(list(filter(lambda x: x is not None,
+                                      self._resourceRequest.values())))
+        return noAllocated / len(self._resourceRequest)
 
     @property
     def resourceRequest(self):
