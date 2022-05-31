@@ -100,3 +100,44 @@ class VirtualizationTests(SimulatorTests):
         m0.freeVM(vm0)
         m0.freeVM(vm1)
 
+
+    def test_2coresVmOn1coresMachine(self):
+        resources = {
+            Resource(Resource.Type.CPU_core, 10), # GHz
+            Resource(Resource.Type.RAM, 16),      # GB
+        }
+        m0 = Machine("m0", resources)
+        req = [
+            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
+            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
+            ResourceRequest(Resource.Type.RAM,      INF), # GB
+        ]
+        vm0 = VirtualMachine("vm0", req)
+        req0 = [
+            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
+            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
+            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
+            ResourceRequest(Resource.Type.RAM,      5),   # GB
+        ]
+        job0 = Job(75, req0, vm0)
+        req1 = [
+            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
+            ResourceRequest(Resource.Type.RAM,      5),   # GB
+        ]
+        job1 = Job(25+20, req1, vm0)
+
+        sim = Simulator.getInstance()
+        sim.addEvent(0, VMStart(m0, vm0))
+        sim.addEvent(0, JobStart(job0))
+        sim.addEvent(0, JobStart(job1))
+
+        inspector = EventInspector([
+            (0, "VMStart_vm0"),
+            (0, "JobStart_Job_0"),
+            (0, "JobStart_Job_1"),
+            (10, "JobFinish_Job_0"),
+            (12, "JobFinish_Job_1"),
+        ])
+        sim.simulate()
+        inspector.verify()
+
