@@ -68,7 +68,41 @@ class ToolsTests(TestCase):
             assert point == eTime
             assert tl[point] == eTasks
 
-            
 
+    def test_TimelineRemove(self):
+        t0 = self.getTask(80, 2, 1)
+        t1 = self.getTask(50, 1, 1)
+        t2 = self.getTask(70, 1, 1)
+        t3 = self.getTask(120,3, 1)
+        t4 = self.getTask(40, 2, 1)
+
+        tl = Timeline()
+        tl.add(0,  t0)
+        tl.add(20, t1)
+        tl.add(40, t2)
+        tl.add(40, t3)
+        tl.add(70, t4)
+
+        tl.remove(t1)
+        tl.remove(t3)
+
+        expTimes = [0, 40, 70, 90, 110]
+        expTasks = [
+            {t0},
+            {t2},
+            {t2, t4},
+            {t2},
+            set(),
+        ]
+
+        for point, eTime, eTasks in zip(tl.timepoints(), expTimes, expTasks):
+            assert point == eTime
+            assert tl[point] == eTasks
+            
+        tl.remove(t0)
+        tl.remove(t2)
+        tl.remove(t4)
+
+        assert len(tl.timepoints()) == 0
 
 
