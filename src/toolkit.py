@@ -84,3 +84,20 @@ class MultiDictRevDict:
         self._revDict.clear()
 
 
+
+class Map(SortedDict):
+
+    def first_key_lower(self, key):
+        idx = self._list.bisect_left(key)
+        if idx == 0:
+            raise KeyError(f"{self} does not contain key lower than {key}")
+        key_ = self._list[idx-1]
+        return key_
+
+    def first_key_higher(self, key):
+        idx = self._list.bisect_right(key)
+        if idx == len(self._list):
+            raise KeyError(f"{self} does not contain key higher than {key}")
+        key_ = self._list[idx]
+        return key_
+
