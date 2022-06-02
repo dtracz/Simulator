@@ -24,6 +24,10 @@ class Task:
                                   self.vm.resourceRequest)))
         return ops / noCores
 
+    @property
+    def endpoint(self):
+        return None if self.startpoint is None else self.startpoint + self.length
+
 
 
 class Timeline:
@@ -36,8 +40,18 @@ class Timeline:
             time_ = self._dict.first_key_lower(time)
             tasks = self._dict[time_]
             for task in tasks:
-                if task.startpoint + task.length > time:
+                if task.endpoint > time:
                     self._dict[time].add(task)
+
+    def _clearPoint(self, time):
+        assert time in self.timepoints()
+        thisPoint = self._dict[time]
+        prevPoint = set()
+        if self._dict.peekitem(0)[0] < time:
+            time_ = self._dict.first_key_lower(time)
+            prevPoint = self._dict[time_]
+        if prevPoint == thisPoint:# and \
+            del self._dict[time]
 
     def add(self, time, task):
         if time not in self._dict.keys():
@@ -50,25 +64,11 @@ class Timeline:
             self._dict[t].add(task)
         task.startpoint = time
 
-    def remove(self, time, task):
-        prevEmpty = True
-        if self._dict.peekitem(0)[0] < time:
-            time_ = self._dict.first_key_lower(time)
-            prevEmpty = len(self._dict[time_]) == 0
-        for t in self._dict.irange(time, time + task.length, (True, False)):
+    def remove(self, task):
+        for t in self._dict.irange(task.startpoint, task.endpoint, (True, False)):
             self._dict[t].remove(task)
-            if len(self._dict[t]) == 0:
-                if prevEmpty:
-                    del self._dict[t]
-                else:
-                    prevEmpty = True
-            else:
-                prevEmpty = False
-        time_ = time + task.length
-        assert time_ in self._dict.keys()
-        assert task not in self._dict[time]
-        if prevEmpty and len(self._dict[time_]) == 0:
-            del self._dict[time_]
+        self._clearPoint(task.startpoint)
+        self._clearPoint(task.endpoint)
         task.startpoint = None
 
     def __getitem__(self, time):
