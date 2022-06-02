@@ -28,6 +28,17 @@ class Task:
     def endpoint(self):
         return None if self.startpoint is None else self.startpoint + self.length
 
+    @staticmethod
+    def sum(tasks):
+        sumDict = {}
+        for task in tasks:
+            for key, val in task.dims.items():
+                if key not in sumDict.keys():
+                    sumDict[key] = val
+                else:
+                    sumDict[key] += val
+        return sumDict
+
 
 
 class Timeline:

@@ -27,17 +27,6 @@ class ToolsTests(TestCase):
         vm.scheduleJob(job)
         return Task(vm)
 
-    @staticmethod
-    def sumTasks(tasks):
-        sumDict = {}
-        for task in tasks:
-            for key, val in task.dims.items():
-                if key not in sumDict.keys():
-                    sumDict[key] = val
-                else:
-                    sumDict[key] += val
-        return sumDict
-
 
     def test_TimelineAdd(self):
         t0 = self.getTask(80, 2, 1)
