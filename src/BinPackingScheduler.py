@@ -92,3 +92,62 @@ class Timeline:
     def timepoints(self):
         return self._dict.keys()
 
+
+
+class BinPackingScheduler(VMSchedulerSimple):
+    """
+    Schedules virtual machines on single hardware machine
+    Assumptions:
+    -> VM contains exactly one job
+    -> VM requests for at most the same
+       amount of resources that job
+    """
+
+
+    class SimpleBin:
+        def __init__(self, maxDims):
+            self.maxDims = maxDims # {Resource.Type: maxSize}
+            self.currentDims = {}
+            for rtype in maxDims.keys():
+                self.currentDims[rtype] = 0
+            self.tasks = set()
+
+        @property
+        def length(self):
+            longest = max(task, key=lambda t: t.length)
+            return longest.length
+
+        def add(self, task):
+            for rtype, limit in self.maxDims.items():
+                if task.dims[rtype] + self.currentDims[rtype] > limit:
+                    return False
+            self.tasks.add(task)
+            for rtype, value in task.dims.items():
+                self.currentDims[rtype] += value
+            return True
+
+        def remove(self, task):
+            if task not in self.tasks:
+                raise KeyError(f"{self} does not contain {task}")
+            self.tasks.remove(task)
+            for rtype, value in task.dims.items():
+                self.currentDims[rtype] -= value
+
+        def eficiency(self, tasks=None):
+            if tasks is None:
+                tasks = self.tasks
+            rtypes = self.maxDims.keys()
+            length = self.length
+            eff = {}
+            for rtype in rtypes:
+                usage = 0
+                for task in self.tasks:
+                    usage += task.length * task.dims[rtype]
+                eff[rtype] = usage / (self.maxDims[rtype] * length)
+            return eff
+
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
