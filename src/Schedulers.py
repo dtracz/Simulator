@@ -11,17 +11,6 @@ class VMSchedulerSimple(NotificationListener):
         self._machine = machine
         self._vmQueue = []
 
-    def isFittable(self, vm):
-        resources = list(self._machine.maxResources)
-        for req in vm.resourceRequest:
-            avaliableRes = list(filter(lambda r: r[0] == req.rtype, resources))
-            if req.value != INF:
-                avaliableRes = list(filter(lambda r: r[1] >= req.value, avaliableRes))
-            if len(avaliableRes) == 0:
-                return False
-            resources.remove(min(avaliableRes, key=lambda r: r[1]))
-        return True
-
     def _tryAllocate(self):
         if len(self._vmQueue) == 0:
             return False
@@ -38,7 +27,7 @@ class VMSchedulerSimple(NotificationListener):
         return True
 
     def schedule(self, vm):
-        if not self.isFittable(vm):
+        if not self._machine.isFittable(vm):
             raise Exception(f"{vm.name} can never be allocated on {self._machine.name}")
         self._vmQueue += [vm]
 
@@ -68,7 +57,7 @@ class VMPlacmentPolicySimple:
         while len(self._noVMs) > 0:
             noVMs, machine = self._noVMs.popitem()
             scheduler = self._schedulers[machine]
-            if scheduler.isFittable(vm):
+            if scheduler._machine.isFittable(vm):
                 scheduler.schedule(vm)
                 self._noVMs.add(noVMs+1, machine)
                 break
@@ -87,17 +76,6 @@ class JobSchedulerSimple(NotificationListener):
         self._jobQueue = []
         self._autofree = autofree and isinstance(machine, VirtualMachine)
         self._finished = False
-
-    def isFittable(self, job):
-        resources = list(self._machine.maxResources)
-        for req in job.resourceRequest:
-            avaliableRes = list(filter(lambda r: r[0] == req.rtype, resources))
-            if req.value != INF:
-                avaliableRes = list(filter(lambda r: r[1] >= req.value, avaliableRes))
-            if len(avaliableRes) == 0:
-                return False
-            resources.remove(min(avaliableRes, key=lambda r: r[1]))
-        return True
 
     def _autoFreeHost(self):
         if not self._finished and self._autofree and \

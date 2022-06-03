@@ -49,6 +49,6 @@ class GeneratorsTests(SimulatorTests):
         jobs = list(gen.getJobs(20))
         vm = CreateVM.minimal(jobs)
         for job in jobs:
-            assert vm._jobScheduler.isFittable(job)
+            assert vm.isFittable(job)
 
 
