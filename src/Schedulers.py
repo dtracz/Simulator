@@ -26,17 +26,15 @@ class VMSchedulerSimple(NotificationListener):
         if len(self._vmQueue) == 0:
             return False
         vm = self._vmQueue[0]
-        excluded = []
-        for req in vm.resourceRequest:
+        def f():
             try:
-                res = self._machine.getBestFitting(req.rtype, req.value, excluded)
-                excluded += [res]
+                self._machine.allocate(vm)
             except:
-                return False
-        now = Simulator.getInstance().time
-        event = VMStart(self._machine, vm)
-        Simulator.getInstance().addEvent(now, event)
-        self._vmQueue.pop(0)
+                return
+            self._vmQueue.pop(0)
+            notif = Notification(NType.VMStart, host=self._machine, vm=vm)
+            Simulator.getInstance().emit(notif)
+        Simulator.getInstance().addEvent(NOW(), Event(f, priority=10))
         return True
 
     def schedule(self, vm):
@@ -116,24 +114,24 @@ class JobSchedulerSimple(NotificationListener):
     def _tryRunNext(self):
         if len(self._jobQueue) == 0:
             return False
+        jobQueue = self._jobQueue
         job = self._jobQueue[0]
-        excluded = []
-        for req in job.resourceRequest:
-            try:
-                res = self._machine.getBestFitting(req.rtype, req.value, excluded)
-                excluded += [res]
-            except:
-                return False
-        now = Simulator.getInstance().time
-        Simulator.getInstance().addEvent(now, JobStart(job))
-        self._jobQueue.pop(0)
+        class TryJobStart(JobStart):
+            def proceed(self):
+                try:
+                    super().proceed()
+                except:
+                    return
+                jobQueue.pop(0)
+        Simulator.getInstance().addEvent(NOW(), TryJobStart(job))
         return True
 
     def schedule(self, job):
         if self._finished:
             raise Exception(f"Scheduler out of operation")
-        if not self.isFittable(job):
-            raise Exception(f"{job.name} can never be allocated on {self._machine.name}")
+        if not self._machine.isFittable(job):
+            raise Exception(f"{job.name} can never be allocated on"
+                            f"{self._machine.name}")
         self._jobQueue += [job]
 
     def notify(self, notif):
