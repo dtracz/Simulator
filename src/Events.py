@@ -26,8 +26,8 @@ class JobStart(Event):
     Job start event.
     Allocates resources for job and schedules it's finish.
     """
-    def __init__(self, job, priority=0):
-        super().__init__(lambda: None, f"JobStart_{job.name}", priority)
+    def __init__(self, job, priority=0, f=lambda: None):
+        super().__init__(f, f"JobStart_{job.name}", priority)
         self.job = job
         self._time = None
 
@@ -42,6 +42,19 @@ class JobStart(Event):
     def proceed(self):
         self._time = Simulator.getInstance().time
         self.job.allocateResources()
+        self.scheduleFinish()
+        notif = Notification(NType.JobStart, job=self.job)
+        Simulator.getInstance().emit(notif)
+
+
+
+class TryJobStart(JobStart):
+    def proceed(self):
+        isAllocated = self.job.machine.allocate(self.job, noexcept=True)
+        self._f(isAllocated)
+        if not isAllocated:
+            return
+        self._time = Simulator.getInstance().time
         self.scheduleFinish()
         notif = Notification(NType.JobStart, job=self.job)
         Simulator.getInstance().emit(notif)

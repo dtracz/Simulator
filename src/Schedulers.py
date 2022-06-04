@@ -10,28 +10,33 @@ class VMSchedulerSimple(NotificationListener):
     def __init__(self, machine):
         self._machine = machine
         self._vmQueue = []
+        self._suspended = False
 
     def _tryAllocate(self):
         if len(self._vmQueue) == 0:
             return False
         vm = self._vmQueue[0]
         def f():
-            try:
-                self._machine.allocate(vm)
-            except:
+            self._suspended = False
+            isAllocated = self._machine.allocate(vm, noexcept=True)
+            if not isAllocated:
                 return
             self._vmQueue.pop(0)
             notif = Notification(NType.VMStart, host=self._machine, vm=vm)
             Simulator.getInstance().emit(notif)
         Simulator.getInstance().addEvent(NOW(), Event(f, priority=10))
+        self._suspended = True
         return True
 
     def schedule(self, vm):
         if not self._machine.isFittable(vm):
-            raise Exception(f"{vm.name} can never be allocated on {self._machine.name}")
+            raise Exception(f"{vm.name} can never be allocated"
+                            f" on {self._machine.name}")
         self._vmQueue += [vm]
 
     def notify(self, notif):
+        if self._suspended:
+            return
         if notif.what == NType.VMStart and \
            notif.host == self._machine:
             self._tryAllocate()
@@ -76,6 +81,7 @@ class JobSchedulerSimple(NotificationListener):
         self._jobQueue = []
         self._autofree = autofree and isinstance(machine, VirtualMachine)
         self._finished = False
+        self._suspended = False
 
     def _autoFreeHost(self):
         if not self._finished and self._autofree and \
@@ -92,16 +98,13 @@ class JobSchedulerSimple(NotificationListener):
     def _tryRunNext(self):
         if len(self._jobQueue) == 0:
             return False
-        jobQueue = self._jobQueue
         job = self._jobQueue[0]
-        class TryJobStart(JobStart):
-            def proceed(self):
-                try:
-                    super().proceed()
-                except:
-                    return
-                jobQueue.pop(0)
-        Simulator.getInstance().addEvent(NOW(), TryJobStart(job))
+        def f(isAllocated):
+            if isAllocated:
+                self._jobQueue.pop(0)
+            self._suspended = False
+        Simulator.getInstance().addEvent(NOW(), TryJobStart(job, f=f))
+        self._suspended = True
         return True
 
     def schedule(self, job):
@@ -113,6 +116,8 @@ class JobSchedulerSimple(NotificationListener):
         self._jobQueue += [job]
 
     def notify(self, notif):
+        if self._suspended:
+            return
         if notif.what == NType.JobFinish and \
            notif.job.machine == self._machine:
             if self._autoFreeHost():

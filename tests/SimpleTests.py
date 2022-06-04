@@ -106,7 +106,7 @@ class SimpleTests(SimulatorTests):
         except RuntimeError as e:
             cought = e.args[0] == "Requested 8 out of 6 avaliable" or \
                      e.args[0] == "Cannot find fitting Type.RAM" or \
-                     e.args[0] == "Resources allocation for Job_1 failed"
+                     e.args[0] == "Resources allocation for Job_1 on m0 failed"
         assert cought
 
 
