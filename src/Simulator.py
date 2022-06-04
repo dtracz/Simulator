@@ -115,7 +115,7 @@ class Simulator:
             raise Exception("Creating another instance of Simulator is forbidden")
         self._listeners = []
         self._eventQueue = Simulator.EventQueue()
-        self.addEvent(self.time, Event(lambda: None, "SimulationStart", 1000))
+        #  self.addEvent(self.time, Event(lambda: None, "SimulationStart", 1000))
         Simulator.__self = self
         
     @staticmethod
