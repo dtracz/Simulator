@@ -16,7 +16,7 @@ class JobFinish(Event):
         self._time = Simulator.getInstance().time
         self.job.registerProgress()
         self.job.freeResources()
-        notif = Notification(NType.JobFinish, job=self.job, event=self)
+        notif = Notification(NType.JobFinish, job=self.job)
         Simulator.getInstance().emit(notif)
 
 
@@ -43,7 +43,7 @@ class JobStart(Event):
         self._time = Simulator.getInstance().time
         self.job.allocateResources()
         self.scheduleFinish()
-        notif = Notification(NType.JobStart, job=self.job, event=self)
+        notif = Notification(NType.JobStart, job=self.job)
         Simulator.getInstance().emit(notif)
 
 
@@ -77,7 +77,7 @@ class JobRecalculate(Event):
         self.job.registerProgress()
         self.deletePrevFinish()
         self.scheduleFinish()
-        notif = Notification(NType.JobRecalculate, job=self.job, event=self)
+        notif = Notification(NType.JobRecalculate, job=self.job)
         Simulator.getInstance().emit(notif)
 
 
@@ -90,7 +90,7 @@ class VMStart(Event):
 
     def proceed(self):
         self.host.allocate(self.vm)
-        notif = Notification(NType.VMStart, host=self.host, vm=self.vm, event=self)
+        notif = Notification(NType.VMStart, host=self.host, vm=self.vm)
         Simulator.getInstance().emit(notif)
 
 
@@ -103,7 +103,7 @@ class VMEnd(Event):
 
     def proceed(self):
         self.host.free(self.vm)
-        notif = Notification(NType.VMEnd, host=self.host, vm=self.vm, event=self)
+        notif = Notification(NType.VMEnd, host=self.host, vm=self.vm)
         Simulator.getInstance().emit(notif)
 
 

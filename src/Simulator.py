@@ -45,9 +45,9 @@ class Notification:
         JobFinish = 5
         Other = 0
 
-    def __init__(self, what, message="", **kwargs):
+    def __init__(self, what, time='now', **kwargs):
+        self.time = NOW() if time == 'now' else time
         self.what = what
-        self.message = message
         for name, value in kwargs.items():
             setattr(self, name, value)
 
@@ -150,4 +150,8 @@ class Simulator:
         self._listeners = []
         self._eventQueue.clear()
         Simulator.__self = None
+
+
+def NOW():
+    return Simulator.getInstance().time
 

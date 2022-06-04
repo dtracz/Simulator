@@ -89,10 +89,10 @@ class VirtualizationTests(SimulatorTests):
         sim.addEvent(0, JobStart(job0))
         sim.addEvent(0, JobStart(job1))
         inspector = EventInspector([
-            (0, "JobStart_Job_0"),
-            (0, "JobStart_Job_1"),
-            (20, "JobFinish_Job_0"),
-            (20, "JobFinish_Job_1"),
+            {'time': 0, 'what': NType.JobStart, 'job': job0},
+            {'time': 0, 'what': NType.JobStart, 'job': job1},
+            {'time': 20, 'what': NType.JobFinish, 'job': job0},
+            {'time': 20, 'what': NType.JobFinish, 'job': job1},
         ])
         sim.simulate()
         inspector.verify()
@@ -132,11 +132,11 @@ class VirtualizationTests(SimulatorTests):
         sim.addEvent(0, JobStart(job1))
 
         inspector = EventInspector([
-            (0, "VMStart_vm0"),
-            (0, "JobStart_Job_0"),
-            (0, "JobStart_Job_1"),
-            (10, "JobFinish_Job_0"),
-            (12, "JobFinish_Job_1"),
+            {'time': 0, 'what': NType.VMStart, 'vm': vm0},
+            {'time': 0, 'what': NType.JobStart, 'job': job0},
+            {'time': 0, 'what': NType.JobStart, 'job': job1},
+            {'time': 10, 'what': NType.JobFinish, 'job': job0},
+            {'time': 12, 'what': NType.JobFinish, 'job': job1},
         ])
         sim.simulate()
         inspector.verify()

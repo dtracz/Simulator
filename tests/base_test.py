@@ -9,23 +9,23 @@ from Job import *
 class EventInspector(NotificationListener):
     def __init__(self, expected=[]):
         self._expectations = []
-        for time, name in expected:
-            self.addExpected(time, name)
+        for kwargs in expected:
+            self.addExpectation(**kwargs)
 
-    def addExpected(self, time, name):
-        self._expectations += [
-            lambda e: e.name == name and \
-                      Simulator.getInstance().time == time,
-        ]
+    def addExpectation(self, f=lambda n: True, **kwargs):
+        def verification(notify):
+            verify = f(notify)
+            for name, value in kwargs.items():
+                verify *= hasattr(notify, name) and \
+                          getattr(notify, name) == value
+            return verify
+        self._expectations += [verification]
 
     def notify(self, notification):
-        if not hasattr(notification, 'event'):
-            return
-        event = notification.event
         for i, f in enumerate(self._expectations):
-            if f(event):
+            if f(notification):
                 del self._expectations[i]
-                break
+                return
 
     def verify(self):
         assert 0 == len(self._expectations)
