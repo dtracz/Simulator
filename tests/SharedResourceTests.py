@@ -94,12 +94,12 @@ class ResourceTests(SimulatorTests):
         sim.addEvent(5, JobStart(job2))
 
         inspector = EventInspector([
-            (0, "JobStart_Job_0"),
-            (5, "JobStart_Job_1"),
-            (5, "JobStart_Job_2"),
-            (10, "JobFinish_Job_0"),
-            (14, "JobFinish_Job_1"),
-            (15, "JobFinish_Job_2"),
+            {'time': 0, 'what': NType.JobStart, 'job': job0},
+            {'time': 5, 'what': NType.JobStart, 'job': job1},
+            {'time': 5, 'what': NType.JobStart, 'job': job2},
+            {'time': 10, 'what': NType.JobFinish, 'job': job0},
+            {'time': 14, 'what': NType.JobFinish, 'job': job1},
+            {'time': 15, 'what': NType.JobFinish, 'job': job2},
         ])
         sim.simulate()
         inspector.verify()

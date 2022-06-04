@@ -1,3 +1,4 @@
+from multiset import Multiset
 from Resource import *
 from toolkit import *
 
@@ -84,6 +85,7 @@ class Machine:
             yield (res.rtype, res.maxValue)
 
     def getBestFitting(self, rtype, value, excluded=[]):
+        #TODO INF non-shared problem
         allRes = list(filter(lambda r: r.rtype == rtype, self.resources))
         if value == INF:
             f = lambda r: r.maxValue/(1 + r.noDynamicUses + len(r.vmsUsing))
@@ -137,6 +139,33 @@ class Machine:
         assert resHolder.isAllocated == 0
         self.delUser(resHolder)
         resHolder.host = None
+
+    def isFittable(self, resHolder):
+        resources = {}
+        for rtype, value in self.maxResources:
+            if rtype not in resources.keys():
+                resources[rtype] = Multiset()
+            resources[rtype].add(value)
+        for req in filter(lambda r: not r.shared and r.value != INF,
+                          resHolder.resourceRequest):
+            avalRes = [v for v in resources[req.rtype] if v >= req.value]
+            if len(avalRes) == 0:
+                return False
+            val = min(avalRes)
+            resources[req.rtype].remove(val, 1)
+            val -= req.value
+            if val > 0:
+                resources[req.rtype].add(val)
+        for req in filter(lambda r: not r.shared and r.value == INF,
+                          resHolder.resourceRequest):
+            if len(resources[req.rtype]) == 0:
+                return False
+            val = min(resources[req.rtype])
+            resources[req.rtype].remove(val, 1)
+        for req in filter(lambda r: r.shared, resHolder.resourceRequest):
+            if len(resources[req.rtype]) == 0:
+                return False
+        return True
 
     def scheduleJob(self, job):
         if self._jobScheduler is None:

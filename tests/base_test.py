@@ -9,20 +9,23 @@ from Job import *
 class EventInspector(NotificationListener):
     def __init__(self, expected=[]):
         self._expectations = []
-        for time, name in expected:
-            self.addExpected(time, name)
+        for kwargs in expected:
+            self.addExpectation(**kwargs)
 
-    def addExpected(self, time, name):
-        self._expectations += [
-            lambda e: e.name == name and \
-                      Simulator.getInstance().time == time,
-        ]
+    def addExpectation(self, f=lambda n: True, **kwargs):
+        def verification(notify):
+            verify = f(notify)
+            for name, value in kwargs.items():
+                verify *= hasattr(notify, name) and \
+                          getattr(notify, name) == value
+            return verify
+        self._expectations += [verification]
 
-    def notify(self, event):
+    def notify(self, notification):
         for i, f in enumerate(self._expectations):
-            if f(event):
+            if f(notification):
                 del self._expectations[i]
-                break
+                return
 
     def verify(self):
         assert 0 == len(self._expectations)
@@ -37,7 +40,7 @@ class SimulatorTests(TestCase):
         Machine._noCreated = 0
         sim = Simulator.getInstance()
         assert sim.time == 0
-        assert len(sim._eventQueue._todo) == 1
+        assert len(sim._eventQueue._todo) == 0
         assert len(sim._eventQueue._done) == 0
 
     def tearDown(self):

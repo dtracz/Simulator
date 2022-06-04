@@ -1,3 +1,4 @@
+from enum import Enum
 from sortedcontainers import SortedDict, SortedSet
 from toolkit import MultiDictRevDict
 from abc import ABCMeta, abstractmethod
@@ -32,6 +33,25 @@ class Event:
 
     def __hash__(self):
         return self._index
+
+
+
+class Notification:
+    class Type(Enum):
+        VMStart = 1
+        VMEnd = 2
+        JobStart = 3
+        JobRecalculate = 4
+        JobFinish = 5
+        Other = 0
+
+    def __init__(self, what, time='now', **kwargs):
+        self.time = NOW() if time == 'now' else time
+        self.what = what
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+
+NType = Notification.Type
 
 
 
@@ -95,7 +115,7 @@ class Simulator:
             raise Exception("Creating another instance of Simulator is forbidden")
         self._listeners = []
         self._eventQueue = Simulator.EventQueue()
-        self.addEvent(self.time, Event(lambda: None, "SimulationStart", 1000))
+        #  self.addEvent(self.time, Event(lambda: None, "SimulationStart", 1000))
         Simulator.__self = self
         
     @staticmethod
@@ -109,10 +129,13 @@ class Simulator:
         return self._eventQueue._currentTime
 
     def simulate(self):
+        self.emit(Notification(NType.Other, message="SimulationStart"))
         while len(self._eventQueue) > 0:
             time, event = self._eventQueue.proceed()
-            for listener in self._listeners:
-                listener.notify(event)
+
+    def emit(self, notification):
+        for listener in self._listeners:
+            listener.notify(notification)
     
     def addEvent(self, time, event):
         self._eventQueue.addEvent(time, event)
@@ -127,4 +150,8 @@ class Simulator:
         self._listeners = []
         self._eventQueue.clear()
         Simulator.__self = None
+
+
+def NOW():
+    return Simulator.getInstance().time
 

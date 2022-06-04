@@ -11,47 +11,35 @@ class VMSchedulerSimple(NotificationListener):
         self._machine = machine
         self._vmQueue = []
 
-    def isFittable(self, vm):
-        resources = list(self._machine.maxResources)
-        for req in vm.resourceRequest:
-            avaliableRes = list(filter(lambda r: r[0] == req.rtype, resources))
-            if req.value != INF:
-                avaliableRes = list(filter(lambda r: r[1] >= req.value, avaliableRes))
-            if len(avaliableRes) == 0:
-                return False
-            resources.remove(min(avaliableRes, key=lambda r: r[1]))
-        return True
-
     def _tryAllocate(self):
         if len(self._vmQueue) == 0:
             return False
         vm = self._vmQueue[0]
-        excluded = []
-        for req in vm.resourceRequest:
+        def f():
             try:
-                res = self._machine.getBestFitting(req.rtype, req.value, excluded)
-                excluded += [res]
+                self._machine.allocate(vm)
             except:
-                return False
-        now = Simulator.getInstance().time
-        event = VMStart(self._machine, vm)
-        Simulator.getInstance().addEvent(now, event)
-        self._vmQueue.pop(0)
+                return
+            self._vmQueue.pop(0)
+            notif = Notification(NType.VMStart, host=self._machine, vm=vm)
+            Simulator.getInstance().emit(notif)
+        Simulator.getInstance().addEvent(NOW(), Event(f, priority=10))
         return True
 
     def schedule(self, vm):
-        if not self.isFittable(vm):
+        if not self._machine.isFittable(vm):
             raise Exception(f"{vm.name} can never be allocated on {self._machine.name}")
         self._vmQueue += [vm]
 
-    def notify(self, event):
-        if isinstance(event, VMStart) and \
-           event.host == self._machine:
+    def notify(self, notif):
+        if notif.what == NType.VMStart and \
+           notif.host == self._machine:
             self._tryAllocate()
-        if isinstance(event, VMEnd) and \
-           event.host == self._machine:
+        if notif.what == NType.VMEnd and \
+           notif.host == self._machine:
             self._tryAllocate()
-        if event.name == "SimulationStart":
+        if notif.what == NType.Other and \
+           notif.message == "SimulationStart":
             self._tryAllocate()
 
 
@@ -69,7 +57,7 @@ class VMPlacmentPolicySimple:
         while len(self._noVMs) > 0:
             noVMs, machine = self._noVMs.popitem()
             scheduler = self._schedulers[machine]
-            if scheduler.isFittable(vm):
+            if scheduler._machine.isFittable(vm):
                 scheduler.schedule(vm)
                 self._noVMs.add(noVMs+1, machine)
                 break
@@ -89,17 +77,6 @@ class JobSchedulerSimple(NotificationListener):
         self._autofree = autofree and isinstance(machine, VirtualMachine)
         self._finished = False
 
-    def isFittable(self, job):
-        resources = list(self._machine.maxResources)
-        for req in job.resourceRequest:
-            avaliableRes = list(filter(lambda r: r[0] == req.rtype, resources))
-            if req.value != INF:
-                avaliableRes = list(filter(lambda r: r[1] >= req.value, avaliableRes))
-            if len(avaliableRes) == 0:
-                return False
-            resources.remove(min(avaliableRes, key=lambda r: r[1]))
-        return True
-
     def _autoFreeHost(self):
         if not self._finished and self._autofree and \
            len(self._jobQueue) == 0 and \
@@ -115,40 +92,39 @@ class JobSchedulerSimple(NotificationListener):
     def _tryRunNext(self):
         if len(self._jobQueue) == 0:
             return False
+        jobQueue = self._jobQueue
         job = self._jobQueue[0]
-        excluded = []
-        for req in job.resourceRequest:
-            try:
-                res = self._machine.getBestFitting(req.rtype, req.value, excluded)
-                excluded += [res]
-            except:
-                return False
-        now = Simulator.getInstance().time
-        Simulator.getInstance().addEvent(now, JobStart(job))
-        self._jobQueue.pop(0)
+        class TryJobStart(JobStart):
+            def proceed(self):
+                try:
+                    super().proceed()
+                except:
+                    return
+                jobQueue.pop(0)
+        Simulator.getInstance().addEvent(NOW(), TryJobStart(job))
         return True
 
     def schedule(self, job):
         if self._finished:
             raise Exception(f"Scheduler out of operation")
-        if not self.isFittable(job):
-            raise Exception(f"{job.name} can never be allocated on {self._machine.name}")
+        if not self._machine.isFittable(job):
+            raise Exception(f"{job.name} can never be allocated on"
+                            f"{self._machine.name}")
         self._jobQueue += [job]
 
-    def notify(self, event):
-        if isinstance(event, JobFinish) and \
-           event.job.machine == self._machine:
+    def notify(self, notif):
+        if notif.what == NType.JobFinish and \
+           notif.job.machine == self._machine:
             if self._autoFreeHost():
                 return
             self._tryRunNext()
-        if isinstance(event, JobStart) and \
-           event.job.machine == self._machine:
+        if notif.what == NType.JobStart and \
+           notif.job.machine == self._machine:
             self._tryRunNext()
-        if isinstance(event, VMStart) and \
-           event.vm == self._machine:
+        if notif.what == NType.VMStart and \
+           notif.vm == self._machine:
             self._tryRunNext()
-        if event.name == "SimulationStart":
+        if notif.what == NType.Other and \
+           notif.message == "SimulationStart":
             self._tryRunNext()
-
-
 
