@@ -42,7 +42,7 @@ class Notification:
         VMEnd = 2
         JobStart = 3
         JobRecalculate = 4
-        JobEnd = 5
+        JobFinish = 5
         Other = 0
 
     def __init__(self, what, message="", **kwargs):
@@ -129,6 +129,7 @@ class Simulator:
         return self._eventQueue._currentTime
 
     def simulate(self):
+        self.emit(Notification(NType.Other, message="SimulationStart"))
         while len(self._eventQueue) > 0:
             time, event = self._eventQueue.proceed()
 

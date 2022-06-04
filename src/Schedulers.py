@@ -44,14 +44,15 @@ class VMSchedulerSimple(NotificationListener):
             raise Exception(f"{vm.name} can never be allocated on {self._machine.name}")
         self._vmQueue += [vm]
 
-    def notify(self, event):
-        if isinstance(event, VMStart) and \
-           event.host == self._machine:
+    def notify(self, notif):
+        if notif.what == NType.VMStart and \
+           notif.host == self._machine:
             self._tryAllocate()
-        if isinstance(event, VMEnd) and \
-           event.host == self._machine:
+        if notif.what == NType.VMEnd and \
+           notif.host == self._machine:
             self._tryAllocate()
-        if event.name == "SimulationStart":
+        if notif.what == NType.Other and \
+           notif.message == "SimulationStart":
             self._tryAllocate()
 
 
@@ -135,20 +136,19 @@ class JobSchedulerSimple(NotificationListener):
             raise Exception(f"{job.name} can never be allocated on {self._machine.name}")
         self._jobQueue += [job]
 
-    def notify(self, event):
-        if isinstance(event, JobFinish) and \
-           event.job.machine == self._machine:
+    def notify(self, notif):
+        if notif.what == NType.JobFinish and \
+           notif.job.machine == self._machine:
             if self._autoFreeHost():
                 return
             self._tryRunNext()
-        if isinstance(event, JobStart) and \
-           event.job.machine == self._machine:
+        if notif.what == NType.JobStart and \
+           notif.job.machine == self._machine:
             self._tryRunNext()
-        if isinstance(event, VMStart) and \
-           event.vm == self._machine:
+        if notif.what == NType.VMStart and \
+           notif.vm == self._machine:
             self._tryRunNext()
-        if event.name == "SimulationStart":
+        if notif.what == NType.Other and \
+           notif.message == "SimulationStart":
             self._tryRunNext()
-
-
 

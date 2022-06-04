@@ -18,7 +18,10 @@ class EventInspector(NotificationListener):
                       Simulator.getInstance().time == time,
         ]
 
-    def notify(self, event):
+    def notify(self, notification):
+        if not hasattr(notification, 'event'):
+            return
+        event = notification.event
         for i, f in enumerate(self._expectations):
             if f(event):
                 del self._expectations[i]
