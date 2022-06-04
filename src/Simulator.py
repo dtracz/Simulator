@@ -1,3 +1,4 @@
+from enum import Enum
 from sortedcontainers import SortedDict, SortedSet
 from toolkit import MultiDictRevDict
 from abc import ABCMeta, abstractmethod
@@ -32,6 +33,25 @@ class Event:
 
     def __hash__(self):
         return self._index
+
+
+
+class Notification:
+    class Type(Enum):
+        VMStart = 1
+        VMEnd = 2
+        JobStart = 3
+        JobRecalculate = 4
+        JobEnd = 5
+        Other = 0
+
+    def __init__(self, what, message="", **kwargs):
+        self.what = what
+        self.message = message
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+
+NType = Notification.Type
 
 
 
@@ -111,8 +131,10 @@ class Simulator:
     def simulate(self):
         while len(self._eventQueue) > 0:
             time, event = self._eventQueue.proceed()
-            for listener in self._listeners:
-                listener.notify(event)
+
+    def emit(self, notification):
+        for listener in self._listeners:
+            listener.notify(notification)
     
     def addEvent(self, time, event):
         self._eventQueue.addEvent(time, event)
