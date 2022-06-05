@@ -24,12 +24,12 @@ class ResourceTests(SimulatorTests):
             ResourceRequest(Resource.Type.CPU_core, inf), # GHz
             ResourceRequest(Resource.Type.RAM,      8),   # GB
         ]
-        job0 = Job(200, res0, m0)
-        job1 = Job(200, res1, m0)
+        job0 = Job(200, res0)
+        job1 = Job(200, res1)
 
         sim = Simulator.getInstance()
-        sim.addEvent(0, JobStart(job0))
-        sim.addEvent(0, JobStart(job1))
+        sim.addEvent(0, JobStart(job0, m0))
+        sim.addEvent(0, JobStart(job1, m0))
 
         sim.simulate()
         assert sim.time == 40
@@ -53,12 +53,12 @@ class ResourceTests(SimulatorTests):
             ResourceRequest(Resource.Type.CPU_core, inf), # GHz
             ResourceRequest(Resource.Type.RAM,      8),   # GB
         ]
-        job0 = Job(600, res0, m0)
-        job1 = Job(400, res1, m0)
+        job0 = Job(600, res0)
+        job1 = Job(400, res1)
 
         sim = Simulator.getInstance()
-        sim.addEvent(30, JobStart(job0))
-        sim.addEvent(0, JobStart(job1))
+        sim.addEvent(30, JobStart(job0, m0))
+        sim.addEvent(0, JobStart(job1, m0))
 
         sim.simulate()
         assert sim.time == 65
@@ -84,14 +84,14 @@ class ResourceTests(SimulatorTests):
             ResourceRequest(Resource.Type.CPU_core, inf), # GHz
             ResourceRequest(Resource.Type.RAM,      5),   # GB
         ]
-        job0 = Job(20, res0, m0)
-        job1 = Job(40, res1, m0)
-        job2 = Job(50, res2, m0)
+        job0 = Job(20, res0)
+        job1 = Job(40, res1)
+        job2 = Job(50, res2)
 
         sim = Simulator.getInstance()
-        sim.addEvent(0, JobStart(job0))
-        sim.addEvent(5, JobStart(job1))
-        sim.addEvent(5, JobStart(job2))
+        sim.addEvent(0, JobStart(job0, m0))
+        sim.addEvent(5, JobStart(job1, m0))
+        sim.addEvent(5, JobStart(job2, m0))
 
         inspector = EventInspector([
             {'time': 0, 'what': NType.JobStart, 'job': job0},

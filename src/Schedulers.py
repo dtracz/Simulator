@@ -103,7 +103,8 @@ class JobSchedulerSimple(NotificationListener):
             if isAllocated:
                 self._jobQueue.pop(0)
             self._suspended = False
-        Simulator.getInstance().addEvent(NOW(), TryJobStart(job, f=f))
+        event = TryJobStart(job, self._machine, f=f)
+        Simulator.getInstance().addEvent(NOW(), event)
         self._suspended = True
         return True
 
@@ -119,12 +120,12 @@ class JobSchedulerSimple(NotificationListener):
         if self._suspended:
             return
         if notif.what == NType.JobFinish and \
-           notif.job.machine == self._machine:
+           notif.host == self._machine:
             if self._autoFreeHost():
                 return
             self._tryRunNext()
         if notif.what == NType.JobStart and \
-           notif.job.machine == self._machine:
+           notif.host == self._machine:
             self._tryRunNext()
         if notif.what == NType.VMStart and \
            notif.vm == self._machine:
