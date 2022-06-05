@@ -1,4 +1,4 @@
-from Simulator import Event, Simulator
+from Simulator import *
 
 
 class JobFinish(Event):
@@ -7,15 +7,18 @@ class JobFinish(Event):
     Releases resources at the end of the job.
     Usually scheduled automatically.
     """
-    def __init__(self, job, priority=80):
+    def __init__(self, job, host, priority=80):
         super().__init__(lambda: None, f"JobFinish_{job.name}", priority)
         self.job = job
+        self.host = host
         self._time = None
 
     def proceed(self):
         self._time = Simulator.getInstance().time
         self.job.registerProgress()
-        self.job.freeResources()
+        self.host.free(self.job)
+        notif = Notification(NType.JobFinish, job=self.job, host=self.host)
+        Simulator.getInstance().emit(notif)
 
 
 
@@ -24,23 +27,39 @@ class JobStart(Event):
     Job start event.
     Allocates resources for job and schedules it's finish.
     """
-    def __init__(self, job, priority=0):
-        super().__init__(lambda: None, f"JobStart_{job.name}", priority)
+    def __init__(self, job, host, priority=0, f=lambda: None):
+        super().__init__(f, f"JobStart_{job.name}", priority)
         self.job = job
+        self.host = host
         self._time = None
 
     def scheduleFinish(self):
         execTime = self.job.calculateExecTime()
         endTime = self._time + execTime
-        jobFinish = JobFinish(self.job)
+        jobFinish = JobFinish(self.job, self.host)
         Simulator.getInstance().addEvent(endTime, jobFinish)
         self.job.predictedFinish = jobFinish
         self.job.update()
 
     def proceed(self):
         self._time = Simulator.getInstance().time
-        self.job.allocateResources()
+        self.host.allocate(self.job)
         self.scheduleFinish()
+        notif = Notification(NType.JobStart, job=self.job, host=self.host)
+        Simulator.getInstance().emit(notif)
+
+
+
+class TryJobStart(JobStart):
+    def proceed(self):
+        isAllocated = self.host.allocate(self.job, noexcept=True)
+        self._f(isAllocated)
+        if not isAllocated:
+            return
+        self._time = Simulator.getInstance().time
+        self.scheduleFinish()
+        notif = Notification(NType.JobStart, job=self.job, host=self.host)
+        Simulator.getInstance().emit(notif)
 
 
 
@@ -49,16 +68,17 @@ class JobRecalculate(Event):
     Job recalculation. Needs to be proceed when
     some resources of already running job change.
     """
-    def __init__(self, job, priority=100):
+    def __init__(self, job, host, priority=100):
         super().__init__(lambda: None, f"JobRecalculate_{job.name}", priority)
         self.job = job
+        self.host = host
         self._time = None
 
     def scheduleFinish(self):
         self._time = Simulator.getInstance().time
         execTime = self.job.calculateExecTime()
         endTime = self._time + execTime
-        jobFinish = JobFinish(self.job)
+        jobFinish = JobFinish(self.job, self.host)
         Simulator.getInstance().addEvent(endTime, jobFinish)
         self.job.predictedFinish = jobFinish
         self.job.update()
@@ -73,6 +93,8 @@ class JobRecalculate(Event):
         self.job.registerProgress()
         self.deletePrevFinish()
         self.scheduleFinish()
+        notif = Notification(NType.JobRecalculate, job=self.job, host=self.host)
+        Simulator.getInstance().emit(notif)
 
 
 
@@ -84,6 +106,8 @@ class VMStart(Event):
 
     def proceed(self):
         self.host.allocate(self.vm)
+        notif = Notification(NType.VMStart, vm=self.vm, host=self.host)
+        Simulator.getInstance().emit(notif)
 
 
 
@@ -95,5 +119,7 @@ class VMEnd(Event):
 
     def proceed(self):
         self.host.free(self.vm)
+        notif = Notification(NType.VMEnd, vm=self.vm, host=self.host)
+        Simulator.getInstance().emit(notif)
 
 

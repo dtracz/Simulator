@@ -96,7 +96,8 @@ class Machine:
                 return res
         raise RuntimeError(f"Cannot find fitting {rtype}")
 
-    def allocate(self, resHolder):
+    def allocate(self, resHolder, noexcept=False):
+        #  print(f"allocating {resHolder.name} on {self.name}")
         if resHolder.isAllocated:
             raise Exception(f"{resHolder.name} is already allocated")
         #  reqResMap = {}
@@ -122,11 +123,15 @@ class Machine:
                 srcRes.release(dstRes)
                 srcRes.delUser(resHolder)
                 resHolder._resourceRequest[req] = None
-            raise RuntimeError(f"Resources allocation for {resHolder.name} failed")
+            if noexcept:
+                return False
+            raise RuntimeError(f"Resources allocation for {resHolder.name} "
+                               f"on {self.name} failed")
         assert resHolder.isAllocated == 1
         #  job.setResources(reqResMap)
         self.addUser(resHolder)
         resHolder.host = self
+        return True
 
     def free(self, resHolder):
         if type(resHolder) not in self._users.keys() or \

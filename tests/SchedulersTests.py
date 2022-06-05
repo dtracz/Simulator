@@ -21,17 +21,14 @@ class SchedulersTests(SimulatorTests):
         job0 = Job(500,
                    [ResourceRequest(Resource.Type.CPU_core, inf),
                     ResourceRequest(Resource.Type.RAM, 8)],
-                   m0
                )
         job1 = Job(1000,
                    [ResourceRequest(Resource.Type.CPU_core, inf),
                     ResourceRequest(Resource.Type.RAM, 6)],
-                   m0
                )
         job2 = Job(1000,
                    [ResourceRequest(Resource.Type.CPU_core, inf),
                     ResourceRequest(Resource.Type.RAM, 6)],
-                   m0
                )
 
         m0.scheduleJob(job0)
@@ -63,17 +60,14 @@ class SchedulersTests(SimulatorTests):
             job0 = Job(500,
                        [ResourceRequest(Resource.Type.CPU_core, inf),
                         ResourceRequest(Resource.Type.RAM, 8)],
-                       vm
                    )
             job1 = Job(1000,
                        [ResourceRequest(Resource.Type.CPU_core, inf),
                         ResourceRequest(Resource.Type.RAM, 6)],
-                       vm
                    )
             job2 = Job(1000,
                        [ResourceRequest(Resource.Type.CPU_core, inf),
                         ResourceRequest(Resource.Type.RAM, 6)],
-                       vm
                    )
             vm.scheduleJob(job0)
             vm.scheduleJob(job1)
@@ -120,17 +114,14 @@ class SchedulersTests(SimulatorTests):
                 Job(500,
                     [ResourceRequest(Resource.Type.CPU_core, inf),
                      ResourceRequest(Resource.Type.RAM, 8)],
-                    vm
                 ),
                 Job(1000,
                     [ResourceRequest(Resource.Type.CPU_core, inf),
                      ResourceRequest(Resource.Type.RAM, 6)],
-                    vm
                 ),
                 Job(1000,
                     [ResourceRequest(Resource.Type.CPU_core, inf),
                      ResourceRequest(Resource.Type.RAM, 6)],
-                    vm
                 ),
             ]
             for i in req_jobs:

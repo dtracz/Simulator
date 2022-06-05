@@ -77,22 +77,20 @@ class VirtualizationTests(SimulatorTests):
         job0 = Job(100,
                    [ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
                     ResourceRequest(Resource.Type.RAM, 5, shared=False)],
-                   vm0
                )
         job1 = Job(100,
                    [ResourceRequest(Resource.Type.CPU_core, inf, shared=True),
                     ResourceRequest(Resource.Type.RAM, 5, shared=False)],
-                   vm1
                )
 
         sim = Simulator.getInstance()
-        sim.addEvent(0, JobStart(job0))
-        sim.addEvent(0, JobStart(job1))
+        sim.addEvent(0, JobStart(job0, vm0))
+        sim.addEvent(0, JobStart(job1, vm1))
         inspector = EventInspector([
-            (0, "JobStart_Job_0"),
-            (0, "JobStart_Job_1"),
-            (20, "JobFinish_Job_0"),
-            (20, "JobFinish_Job_1"),
+            {'time': 0, 'what': NType.JobStart, 'job': job0},
+            {'time': 0, 'what': NType.JobStart, 'job': job1},
+            {'time': 20, 'what': NType.JobFinish, 'job': job0},
+            {'time': 20, 'what': NType.JobFinish, 'job': job1},
         ])
         sim.simulate()
         inspector.verify()
@@ -119,24 +117,24 @@ class VirtualizationTests(SimulatorTests):
             ResourceRequest(Resource.Type.CPU_core, INF), # GHz
             ResourceRequest(Resource.Type.RAM,      5),   # GB
         ]
-        job0 = Job(75, req0, vm0)
+        job0 = Job(75, req0)
         req1 = [
             ResourceRequest(Resource.Type.CPU_core, INF), # GHz
             ResourceRequest(Resource.Type.RAM,      5),   # GB
         ]
-        job1 = Job(25+20, req1, vm0)
+        job1 = Job(25+20, req1)
 
         sim = Simulator.getInstance()
         sim.addEvent(0, VMStart(m0, vm0))
-        sim.addEvent(0, JobStart(job0))
-        sim.addEvent(0, JobStart(job1))
+        sim.addEvent(0, JobStart(job0, vm0))
+        sim.addEvent(0, JobStart(job1, vm0))
 
         inspector = EventInspector([
-            (0, "VMStart_vm0"),
-            (0, "JobStart_Job_0"),
-            (0, "JobStart_Job_1"),
-            (10, "JobFinish_Job_0"),
-            (12, "JobFinish_Job_1"),
+            {'time': 0, 'what': NType.VMStart, 'vm': vm0},
+            {'time': 0, 'what': NType.JobStart, 'job': job0},
+            {'time': 0, 'what': NType.JobStart, 'job': job1},
+            {'time': 10, 'what': NType.JobFinish, 'job': job0},
+            {'time': 12, 'what': NType.JobFinish, 'job': job1},
         ])
         sim.simulate()
         inspector.verify()

@@ -10,37 +10,41 @@ class VMSchedulerSimple(NotificationListener):
     def __init__(self, machine):
         self._machine = machine
         self._vmQueue = []
+        self._suspended = False
 
     def _tryAllocate(self):
         if len(self._vmQueue) == 0:
             return False
         vm = self._vmQueue[0]
-        excluded = []
-        for req in vm.resourceRequest:
-            try:
-                res = self._machine.getBestFitting(req.rtype, req.value, excluded)
-                excluded += [res]
-            except:
-                return False
-        now = Simulator.getInstance().time
-        event = VMStart(self._machine, vm)
-        Simulator.getInstance().addEvent(now, event)
-        self._vmQueue.pop(0)
+        def f():
+            self._suspended = False
+            isAllocated = self._machine.allocate(vm, noexcept=True)
+            if not isAllocated:
+                return
+            self._vmQueue.pop(0)
+            notif = Notification(NType.VMStart, host=self._machine, vm=vm)
+            Simulator.getInstance().emit(notif)
+        Simulator.getInstance().addEvent(NOW(), Event(f, priority=10))
+        self._suspended = True
         return True
 
     def schedule(self, vm):
         if not self._machine.isFittable(vm):
-            raise Exception(f"{vm.name} can never be allocated on {self._machine.name}")
+            raise Exception(f"{vm.name} can never be allocated"
+                            f" on {self._machine.name}")
         self._vmQueue += [vm]
 
-    def notify(self, event):
-        if isinstance(event, VMStart) and \
-           event.host == self._machine:
+    def notify(self, notif):
+        if self._suspended:
+            return
+        if notif.what == NType.VMStart and \
+           notif.host == self._machine:
             self._tryAllocate()
-        if isinstance(event, VMEnd) and \
-           event.host == self._machine:
+        if notif.what == NType.VMEnd and \
+           notif.host == self._machine:
             self._tryAllocate()
-        if event.name == "SimulationStart":
+        if notif.what == NType.Other and \
+           notif.message == "SimulationStart":
             self._tryAllocate()
 
 
@@ -77,6 +81,7 @@ class JobSchedulerSimple(NotificationListener):
         self._jobQueue = []
         self._autofree = autofree and isinstance(machine, VirtualMachine)
         self._finished = False
+        self._suspended = False
 
     def _autoFreeHost(self):
         if not self._finished and self._autofree and \
@@ -94,39 +99,38 @@ class JobSchedulerSimple(NotificationListener):
         if len(self._jobQueue) == 0:
             return False
         job = self._jobQueue[0]
-        excluded = []
-        for req in job.resourceRequest:
-            try:
-                res = self._machine.getBestFitting(req.rtype, req.value, excluded)
-                excluded += [res]
-            except:
-                return False
-        now = Simulator.getInstance().time
-        Simulator.getInstance().addEvent(now, JobStart(job))
-        self._jobQueue.pop(0)
+        def f(isAllocated):
+            if isAllocated:
+                self._jobQueue.pop(0)
+            self._suspended = False
+        event = TryJobStart(job, self._machine, f=f)
+        Simulator.getInstance().addEvent(NOW(), event)
+        self._suspended = True
         return True
 
     def schedule(self, job):
         if self._finished:
             raise Exception(f"Scheduler out of operation")
         if not self._machine.isFittable(job):
-            raise Exception(f"{job.name} can never be allocated on {self._machine.name}")
+            raise Exception(f"{job.name} can never be allocated on"
+                            f"{self._machine.name}")
         self._jobQueue += [job]
 
-    def notify(self, event):
-        if isinstance(event, JobFinish) and \
-           event.job.machine == self._machine:
+    def notify(self, notif):
+        if self._suspended:
+            return
+        if notif.what == NType.JobFinish and \
+           notif.host == self._machine:
             if self._autoFreeHost():
                 return
             self._tryRunNext()
-        if isinstance(event, JobStart) and \
-           event.job.machine == self._machine:
+        if notif.what == NType.JobStart and \
+           notif.host == self._machine:
             self._tryRunNext()
-        if isinstance(event, VMStart) and \
-           event.vm == self._machine:
+        if notif.what == NType.VMStart and \
+           notif.vm == self._machine:
             self._tryRunNext()
-        if event.name == "SimulationStart":
+        if notif.what == NType.Other and \
+           notif.message == "SimulationStart":
             self._tryRunNext()
-
-
 

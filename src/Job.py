@@ -10,31 +10,18 @@ class Job(ResourcesHolder):
     """
     _noCreated = 0
 
-    def __init__(self, operations, resourceRequest, machine=None, name=None):
+    def __init__(self, operations, resourceRequest, name=None):
         super().__init__(resourceRequest)
         self._index = Job._noCreated
         if (name is None):
             name = f"Job_{self._index}"
+        assert type(name) is str
         self.name = name
-        self.machine = machine
         self.operations = operations
         self.operationsLeft = operations
         self.predictedFinish = None
         self._updates = [] # [(time, speed)]
         Job._noCreated += 1
-
-    def asignMachine(self, machine):
-        self.machine = machine
-
-    def allocateResources(self):
-        if self.machine == None:
-            raise RuntimeError("No machine selected")
-        self.machine.allocate(self)
-
-    def freeResources(self):
-        if self.machine == None:
-            raise RuntimeError("No machine selected")
-        self.machine.free(self)
 
     def getCurrentSpeed(self):
         totalFrequency = 0

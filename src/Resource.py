@@ -113,7 +113,7 @@ class Resource:
         for job in self.jobsUsing:
             if job.operationsLeft < EPS:
                 continue
-            jobRecalculate = JobRecalculate(job)
+            jobRecalculate = JobRecalculate(job, job.host)
             Simulator.getInstance().addEvent(now, jobRecalculate)
 
     def __lt__(self, other):
