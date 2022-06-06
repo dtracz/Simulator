@@ -15,13 +15,22 @@ class Task:
         assert len(vm._jobScheduler._jobQueue) == 1
         self.job = vm._jobScheduler._jobQueue[0]
         self.dims = {}
+        rams = list(filter(lambda rv: rv[0] == Resource.Type.RAM,
+                           vm.maxResources))
+        assert len(rams) == 1
+        self.dims[rams[0][0]] = rams[0][1]
+        cores = list(filter(lambda rv: rv[0] == Resource.Type.CPU_core,
+                            vm.maxResources))
+        assert len(cores) > 0
+        self.dims[cores[0][0]] = len(cores)
         self.startpoint = None
 
     @property
     def length(self):
         ops = self.job.operations
-        noCores = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
-                                  self.vm.resourceRequest)))
+        noCores = self.dims[Resource.Type.CPU_core]
+        #  noCores = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
+        #                            self.vm.resourceRequest)))
         return ops / noCores
 
     @property
@@ -94,6 +103,74 @@ class Timeline:
 
 
 
+class SimpleBin:
+    def __init__(self, maxDims):
+        self.maxDims = maxDims # {Resource.Type: maxSize}
+        self.currentDims = {}
+        for rtype in maxDims.keys():
+            self.currentDims[rtype] = 0
+        self._tasks = set()
+        self._closed = False
+
+    @property
+    def length(self):
+        longest = max(self._tasks, key=lambda t: t.length)
+        return longest.length
+
+    def add(self, task):
+        if self._closed:
+            raise Exception("Bin already closed")
+        for rtype, limit in self.maxDims.items():
+            assert rtype in task.dims
+            assert rtype in self.currentDims
+            if task.dims[rtype] + self.currentDims[rtype] > limit:
+                return False
+        self._tasks.add(task)
+        for rtype, value in task.dims.items():
+            self.currentDims[rtype] += value
+        return True
+
+    def remove(self, task):
+        if self._closed:
+            raise Exception("Bin already closed")
+        if task not in self._tasks:
+            raise KeyError(f"{self} does not contain {task}")
+        self._tasks.remove(task)
+        for rtype, value in task.dims.items():
+            self.currentDims[rtype] -= value
+
+    def efficiency(self, tasks=None):
+        if tasks is None:
+            tasks = self._tasks
+        rtypes = self.maxDims.keys()
+        length = self.length
+        eff = {}
+        for rtype in rtypes:
+            usage = 0
+            for task in self._tasks:
+                usage += task.length * task.dims[rtype]
+            eff[rtype] = usage / (self.maxDims[rtype] * length)
+        return eff
+
+    def close(self):
+        self._closed = True
+        self._tasks = list(self._tasks)
+        self._tasks.sort(key=lambda t: t.job._index)
+
+    def getNext(self):
+        if not self._closed:
+            raise Exception("Bin not closed yet")
+        if len(self._tasks) == 0:
+            return None
+        return self._tasks[0].vm
+
+    def popNext(self):
+        if not self._closed:
+            raise Exception("Bin not closed yet")
+        return self._tasks.pop(0).vm
+
+
+
 class BinPackingScheduler(VMSchedulerSimple):
     """
     Schedules virtual machines on single hardware machine
@@ -104,50 +181,75 @@ class BinPackingScheduler(VMSchedulerSimple):
     """
 
 
-    class SimpleBin:
-        def __init__(self, maxDims):
-            self.maxDims = maxDims # {Resource.Type: maxSize}
-            self.currentDims = {}
-            for rtype in maxDims.keys():
-                self.currentDims[rtype] = 0
-            self.tasks = set()
+    def __init__(self, machine):
+        super().__init__(machine)
+        self._maxDims = {}
+        rams = list(filter(lambda r: r.rtype == Resource.Type.RAM,
+                           machine.resources))
+        assert len(rams) == 1
+        self._maxDims[rams[0].rtype] = rams[0].value
+        cores = list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
+                            machine.resources))
+        assert len(cores) > 0
+        self._maxDims[cores[0].rtype] = len(cores)
+        self._bins = []
+        self._currentBin = None
 
-        @property
-        def length(self):
-            longest = max(task, key=lambda t: t.length)
-            return longest.length
+    def _loadNextBin(self):
+        if len(self._bins) == 0:
+            return False
+        self._currentBin = max(self._bins,
+                               key=lambda b: b.efficiency()[Resource.Type.CPU_core])
+        idx = self._bins.index(self._currentBin)
+        del self._bins[idx]
+        self._currentBin.close()
+        return True
 
-        def add(self, task):
-            for rtype, limit in self.maxDims.items():
-                if task.dims[rtype] + self.currentDims[rtype] > limit:
-                    return False
-            self.tasks.add(task)
-            for rtype, value in task.dims.items():
-                self.currentDims[rtype] += value
-            return True
+    def head(self):
+        if self._currentBin is None:
+            if not self._loadNextBin():
+                return None
+        vm = self._currentBin.getNext()
+        if vm is None:
+            if not self._loadNextBin():
+                return None
+            vm = self._currentBin.getNext()
+        return vm
 
-        def remove(self, task):
-            if task not in self.tasks:
-                raise KeyError(f"{self} does not contain {task}")
-            self.tasks.remove(task)
-            for rtype, value in task.dims.items():
-                self.currentDims[rtype] -= value
+    def popFront(self):
+        return self._currentBin.popNext()
 
-        def eficiency(self, tasks=None):
-            if tasks is None:
-                tasks = self.tasks
-            rtypes = self.maxDims.keys()
-            length = self.length
-            eff = {}
-            for rtype in rtypes:
-                usage = 0
-                for task in self.tasks:
-                    usage += task.length * task.dims[rtype]
-                eff[rtype] = usage / (self.maxDims[rtype] * length)
-            return eff
+    @staticmethod
+    def evalFitting(bucket, task):
+        lgthDiff = abs(bucket.length - task.length) / bucket.length
+        if lgthDiff > 0.3:
+            return None
+        eff0 = bucket.efficiency()
+        if not bucket.add(task):
+            return None
+        eff1 = bucket.efficiency()
+        bucket.remove(task)
+        dEff = dictMinus(eff0, eff1)
+        return dictMultiply(1 - lgthDiff, dEff)
 
-
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def schedule(self, vm):
+        if not self._machine.isFittable(vm):
+            raise Exception(f"{vm.name} can never be allocated"
+                            f" on {self._machine.name}")
+        task = Task(vm)
+        bestBucket = None
+        bestScore = {}
+        for key in self._maxDims.keys():
+            bestScore[key] = -INF
+        for bucket in self._bins:
+            score = self.evalFitting(bucket, task)
+            if score is None:
+                continue
+            if score[Resource.Type.CPU_core] > bestScore[Resource.Type.CPU_core]:
+                bestBucket = bucket
+                bestScore = score
+        if bestBucket is None:
+            self._bins += [SimpleBin(self._maxDims)]
+            bestBucket = self._bins[-1]
+        bestBucket.add(task)
 

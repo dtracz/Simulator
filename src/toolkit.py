@@ -101,3 +101,17 @@ class Map(SortedDict):
         key_ = self._list[idx]
         return key_
 
+
+def dictMinus(d0, d1):
+    ans = {}
+    for i in set(d0.keys()).union(d1.keys()):
+        ans[i] = d0.get(i, 0) - d1.get(i, 0)
+    return ans
+
+
+def dictMultiply(a, d):
+    ans = {}
+    for i in d.keys():
+        ans[i] = a * d[i]
+    return ans
+
