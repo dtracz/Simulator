@@ -97,7 +97,6 @@ class Machine:
         raise RuntimeError(f"Cannot find fitting {rtype}")
 
     def allocate(self, resHolder, noexcept=False):
-        #  print(f"allocating {resHolder.name} on {self.name}")
         if resHolder.isAllocated:
             raise Exception(f"{resHolder.name} is already allocated")
         #  reqResMap = {}
