@@ -2,6 +2,7 @@ from Simulator import *
 from Resource import *
 from Machine import *
 from Schedulers import *
+from BinPackingScheduler import *
 from Generator import *
 from numpy import random
 
@@ -18,10 +19,11 @@ resources = {
     Resource(Resource.Type.RAM, RAM_SIZE),       # GB
 }
 machine = Machine("m0", resources, lambda m: None, VMSchedulerSimple)
+#  machine = Machine("m0", resources, lambda m: None, BinPackingScheduler)
 
 
 gen = RandomJobGenerator(noCores=lambda s: 1+random.binomial(3, 0.08, s))
-jobs = gen.getJobs(1000)
+jobs = gen.getJobs(100)
 
 totalOps = 0
 theoreticalTotalTime = 0
@@ -32,7 +34,6 @@ for job in jobs:
     totalOps += ops
     theoreticalTotalTime += ops / (noCores*CPU_SPEED)
     vm = CreateVM.minimal([job])
-    job.asignMachine(vm)
     vm.scheduleJob(job)
     machine.scheduleVM(vm)
 

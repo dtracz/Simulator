@@ -111,6 +111,8 @@ class Resource:
     def recalculateJobs(self):
         now = Simulator.getInstance().time
         for job in self.jobsUsing:
+            if job.host is None:
+                continue
             if job.operationsLeft < EPS:
                 continue
             jobRecalculate = JobRecalculate(job, job.host)

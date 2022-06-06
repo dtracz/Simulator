@@ -12,16 +12,24 @@ class VMSchedulerSimple(NotificationListener):
         self._vmQueue = []
         self._suspended = False
 
-    def _tryAllocate(self):
+    def head(self):
         if len(self._vmQueue) == 0:
+            return None
+        return self._vmQueue[0]
+
+    def popFront(self):
+        return self._vmQueue.pop(0)
+
+    def _tryAllocate(self):
+        if self.head() is None:
             return False
-        vm = self._vmQueue[0]
+        vm = self.head()
         def f():
             self._suspended = False
             isAllocated = self._machine.allocate(vm, noexcept=True)
             if not isAllocated:
                 return
-            self._vmQueue.pop(0)
+            self.popFront()
             notif = Notification(NType.VMStart, host=self._machine, vm=vm)
             Simulator.getInstance().emit(notif)
         Simulator.getInstance().addEvent(NOW(), Event(f, priority=10))
