@@ -251,5 +251,6 @@ class BinPackingScheduler(VMSchedulerSimple):
         if bestBucket is None:
             self._bins += [SimpleBin(self._maxDims)]
             bestBucket = self._bins[-1]
-        bestBucket.add(task)
+        if not bestBucket.add(task):
+            raise Exception(f"{vm.name} cannot be fit into any bucket")
 
