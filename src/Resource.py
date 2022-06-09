@@ -127,6 +127,9 @@ class Resource:
         return id(self)
 
 
+RType = Resource.Type
+
+
 
 class ResourcesHolder:
     def __init__(self, resourceRequest):

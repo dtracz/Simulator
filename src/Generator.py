@@ -11,9 +11,9 @@ class JobGenerator(metaclass=ABCMeta):
 
     @staticmethod
     def createJob(operations, noCores, ramSize, machine=None):
-        req = [ResourceRequest(Resource.Type.RAM, ramSize)]
+        req = [ResourceRequest(RType.RAM, ramSize)]
         for _ in range(noCores):
-            req += [ResourceRequest(Resource.Type.CPU_core, INF)]
+            req += [ResourceRequest(RType.CPU_core, INF)]
         return Job(operations, req, machine)
 
     @abstractmethod
@@ -101,16 +101,16 @@ class CreateVM:
             currentNoCores = 0
             currentRamSize = 0
             for req in job.resourceRequest:
-                if req.rtype is Resource.Type.CPU_core:
+                if req.rtype is RType.CPU_core:
                     currentNoCores += 1
-                if req.rtype is Resource.Type.RAM:
+                if req.rtype is RType.RAM:
                     currentRamSize += req.value
             noCores = max(noCores, currentNoCores)
             ramSize = max(ramSize, currentRamSize)
         noCores = min(noCores, coreLimit)
-        req = [ResourceRequest(Resource.Type.RAM, ramSize)]
+        req = [ResourceRequest(RType.RAM, ramSize)]
         for _ in range(noCores):
-            req += [ResourceRequest(Resource.Type.CPU_core, INF, shared=not ownCores)]
+            req += [ResourceRequest(RType.CPU_core, INF, shared=not ownCores)]
         vm = VirtualMachine(name, req, scheduler)
         return vm
 

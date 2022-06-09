@@ -26,7 +26,7 @@ class Job(ResourcesHolder):
     def getCurrentSpeed(self):
         totalFrequency = 0
         for resource in self.obtainedRes:
-            if resource.rtype == Resource.Type.CPU_core:
+            if resource.rtype == RType.CPU_core:
                 totalFrequency += resource.value
         return totalFrequency
 

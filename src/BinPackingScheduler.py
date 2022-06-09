@@ -15,37 +15,37 @@ class Task:
         assert len(vm._jobScheduler._jobQueue) == 1
         self.job = vm._jobScheduler._jobQueue[0]
         self.dims = {}
-        rams = list(filter(lambda rv: rv[0] == Resource.Type.RAM,
+        rams = list(filter(lambda rv: rv[0] == RType.RAM,
                            vm.maxResources))
         assert len(rams) == 1
         self.dims[rams[0][0]] = rams[0][1]
-        cores = list(filter(lambda rv: rv[0] == Resource.Type.CPU_core,
+        cores = list(filter(lambda rv: rv[0] == RType.CPU_core,
                             vm.maxResources))
         assert len(cores) > 0
         self.dims[cores[0][0]] = len(cores)
         self.startpoint = None
 
     def reduceCores(self, n=-1):
-        noCores = self.dims[Resource.Type.CPU_core]
+        noCores = self.dims[RType.CPU_core]
         if n <= 0:
             n += noCores
         if n <= 0:
             raise Exception("Task has to have at leat 1 core assigned")
         if n < noCores:
-            self.dims[Resource.Type.CPU_core] = n
+            self.dims[RType.CPU_core] = n
         return noCores
 
     def restoreCores(self, n=INF):
-        maxCores = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
+        maxCores = len(list(filter(lambda r: r.rtype == RType.CPU_core,
                                   self.job.resourceRequest)))
-        currentCores = self.dims[Resource.Type.CPU_core]
-        self.dims[Resource.Type.CPU_core] = min(maxCores, currentCores + n)
-        return self.dims[Resource.Type.CPU_core]
+        currentCores = self.dims[RType.CPU_core]
+        self.dims[RType.CPU_core] = min(maxCores, currentCores + n)
+        return self.dims[RType.CPU_core]
 
     @property
     def length(self):
         ops = self.job.operations
-        noCores = self.dims[Resource.Type.CPU_core]
+        noCores = self.dims[RType.CPU_core]
         return ops / noCores
 
     @property
@@ -120,7 +120,7 @@ class Timeline:
 
 class SimpleBin:
     def __init__(self, maxDims):
-        self.maxDims = maxDims # {Resource.Type: maxSize}
+        self.maxDims = maxDims # {RType: maxSize}
         self._tasks = set()
         self._closed = False
 
@@ -195,7 +195,7 @@ class ReductiveBin(SimpleBin):
         bestToReduce = None
         lengthOverhead = INF
         for task in self._tasks:
-            noCores = task.dims[Resource.Type.CPU_core]
+            noCores = task.dims[RType.CPU_core]
             if noCores < 2:
                 continue
             futureLength = (task.length * noCores) / (noCores - 1)
@@ -216,7 +216,7 @@ class ReductiveBin(SimpleBin):
 
     def _refitJobs(self):
         reduced = {}
-        while self.currentDims[Resource.Type.CPU_core] > self.maxDims[Resource.Type.CPU_core]:
+        while self.currentDims[RType.CPU_core] > self.maxDims[RType.CPU_core]:
             redTask = self._reduceOne()
             if redTask is None:
                 self._restoreReduced(reduced)
@@ -230,7 +230,7 @@ class ReductiveBin(SimpleBin):
         if self._closed:
             raise Exception("Bin already closed")
         for rtype, limit in self.maxDims.items():
-            if rtype == Resource.Type.CPU_core:
+            if rtype == RType.CPU_core:
                 continue
             assert rtype in task.dims
             assert rtype in self.maxDims
@@ -263,11 +263,11 @@ class BinPackingScheduler(VMSchedulerSimple):
         super().__init__(machine)
         self.BinClass = BinClass
         self._maxDims = {}
-        rams = list(filter(lambda r: r.rtype == Resource.Type.RAM,
+        rams = list(filter(lambda r: r.rtype == RType.RAM,
                            machine.resources))
         assert len(rams) == 1
         self._maxDims[rams[0].rtype] = rams[0].value
-        cores = list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
+        cores = list(filter(lambda r: r.rtype == RType.CPU_core,
                             machine.resources))
         assert len(cores) > 0
         self._maxDims[cores[0].rtype] = len(cores)
@@ -278,7 +278,7 @@ class BinPackingScheduler(VMSchedulerSimple):
         if len(self._bins) == 0:
             return False
         self._currentBin = max(self._bins,
-                               key=lambda b: b.efficiency()[Resource.Type.CPU_core])
+                               key=lambda b: b.efficiency()[RType.CPU_core])
         idx = self._bins.index(self._currentBin)
         del self._bins[idx]
         self._currentBin.close()
@@ -324,7 +324,7 @@ class BinPackingScheduler(VMSchedulerSimple):
             score = self.evalFitting(bucket, task)
             if score is None:
                 continue
-            if score[Resource.Type.CPU_core] > bestScore[Resource.Type.CPU_core]:
+            if score[RType.CPU_core] > bestScore[RType.CPU_core]:
                 bestBucket = bucket
                 bestScore = score
         if bestBucket is None:
