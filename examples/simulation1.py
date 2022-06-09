@@ -70,6 +70,8 @@ for job in jobs:
 sim = Simulator.getInstance()
 sim.simulate()
 
+assert machine._vmScheduler.vmsLeft == 0
+
 print("simulation time:", sim.time)
 print("theoretical sequence execution time:", theoreticalTotalTime)
 print("theoretical best possible time:", totalOps / (args.CPU_SPEED * args.NO_CORES))

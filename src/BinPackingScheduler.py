@@ -274,6 +274,13 @@ class BinPackingScheduler(VMSchedulerSimple):
         self._bins = []
         self._currentBin = None
 
+    @property
+    def vmsLeft(self):
+        n = 0
+        for bucket in self._bins:
+            n += len(bucket._tasks)
+        return n
+
     def _loadNextBin(self):
         if len(self._bins) == 0:
             return False
