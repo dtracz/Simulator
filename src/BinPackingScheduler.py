@@ -259,8 +259,9 @@ class BinPackingScheduler(VMSchedulerSimple):
     """
 
 
-    def __init__(self, machine):
+    def __init__(self, machine, BinClass=SimpleBin):
         super().__init__(machine)
+        self.BinClass = BinClass
         self._maxDims = {}
         rams = list(filter(lambda r: r.rtype == Resource.Type.RAM,
                            machine.resources))
@@ -327,7 +328,7 @@ class BinPackingScheduler(VMSchedulerSimple):
                 bestBucket = bucket
                 bestScore = score
         if bestBucket is None:
-            self._bins += [SimpleBin(self._maxDims)]
+            self._bins += [self.BinClass(self._maxDims)]
             bestBucket = self._bins[-1]
         if not bestBucket.add(task):
             raise Exception(f"{vm.name} cannot be fit into any bucket")
