@@ -121,9 +121,6 @@ class Timeline:
 class SimpleBin:
     def __init__(self, maxDims):
         self.maxDims = maxDims # {Resource.Type: maxSize}
-        self.currentDims = {}
-        for rtype in maxDims.keys():
-            self.currentDims[rtype] = 0
         self._tasks = set()
         self._closed = False
 
@@ -132,17 +129,25 @@ class SimpleBin:
         longest = max(self._tasks, key=lambda t: t.length)
         return longest.length
 
+    @property
+    def currentDims(self):
+        dims = {}
+        for rtype in self.maxDims.keys():
+            dims[rtype] = 0
+        for task in self._tasks:
+            for rtype, value in task.dims.items():
+                dims[rtype] += value
+        return dims
+
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
         for rtype, limit in self.maxDims.items():
             assert rtype in task.dims
-            assert rtype in self.currentDims
+            assert rtype in self.maxDims
             if task.dims[rtype] + self.currentDims[rtype] > limit:
                 return False
         self._tasks.add(task)
-        for rtype, value in task.dims.items():
-            self.currentDims[rtype] += value
         return True
 
     def remove(self, task):
@@ -151,8 +156,6 @@ class SimpleBin:
         if task not in self._tasks:
             raise KeyError(f"{self} does not contain {task}")
         self._tasks.remove(task)
-        for rtype, value in task.dims.items():
-            self.currentDims[rtype] -= value
 
     def efficiency(self, tasks=None):
         if tasks is None:
@@ -201,7 +204,6 @@ class ReductiveBin(SimpleBin):
                 bestToReduce = task
         if bestToReduce is not None:
             bestToReduce.reduce()
-            self.currentDims[Resource.Type.CPU_core] -= 1
         return bestToReduce
 
     def _restoreReduced(self, reduced=None):
