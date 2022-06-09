@@ -84,17 +84,25 @@ class Machine:
         for res in self.resources:
             yield (res.rtype, res.maxValue)
 
-    def getBestFitting(self, rtype, value, excluded=[]):
-        #TODO INF non-shared problem
-        allRes = list(filter(lambda r: r.rtype == rtype, self.resources))
-        if value == INF:
+    def getBestFitting(self, req):
+        f = lambda r: r.rtype == req.rtype and r.value > 0
+        allRes = list(filter(f, self.resources))
+        if len(allRes) == 0:
+            raise RuntimeError(f"Cannot find fitting {req.rtype}")
+        if req.shared:
             f = lambda r: r.maxValue/(1 + r.noDynamicUses + len(r.vmsUsing))
             return max(allRes, key=f)
-        allRes.sort(key=lambda r: r.value)
-        for res in allRes:
-            if res.value >= value:
-                return res
-        raise RuntimeError(f"Cannot find fitting {rtype}")
+        elif req.value == INF:
+            allRes = list(filter(lambda r: r.noDynamicUses == 0, allRes))
+            if len(allRes) == 0:
+                raise RuntimeError(f"Cannot find fitting {req.rtype}")
+            return max(allRes, key=lambda r: r.value)
+        else:
+            allRes.sort(key=lambda r: r.value)
+            for res in allRes:
+                if res.value >= req.value:
+                    return res
+        raise RuntimeError(f"Cannot find fitting {req.rtype}")
 
     def allocate(self, resHolder, noexcept=False):
         if resHolder.isAllocated:
@@ -102,18 +110,20 @@ class Machine:
         #  reqResMap = {}
         try:
             for req in filter(lambda r: not r.shared, resHolder.resourceRequest):
-                srcRes = self.getBestFitting(req.rtype, req.value)
+                srcRes = self.getBestFitting(req)
                 dstRes = srcRes.withold(req)
+                assert dstRes.value > 0
                 #  reqResMap[req] = (srcRes, dstRes)
                 resHolder._resourceRequest[req] = (srcRes, dstRes)
                 srcRes.addUser(resHolder)
             for req in filter(lambda r: r.shared, resHolder.resourceRequest):
-                srcRes = self.getBestFitting(req.rtype, req.value)
+                srcRes = self.getBestFitting(req)
                 dstRes = srcRes.withold(req)
+                assert dstRes.value > 0
                 #  reqResMap[req] = (srcRes, dstRes)
                 resHolder._resourceRequest[req] = (srcRes, dstRes)
                 srcRes.addUser(resHolder)
-        except:
+        except RuntimeError:
             #  for srcRes, dstRes in reqResMap.values():
             for req, x in resHolder._resourceRequest.items():
                 if x is None:
