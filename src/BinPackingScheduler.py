@@ -32,7 +32,7 @@ class Task:
         if n <= 0:
             raise Exception("Task has to have at leat 1 core assigned")
         if n < noCores:
-            self.dims[Resource.Type.CPU_core] = noCores
+            self.dims[Resource.Type.CPU_core] = n
         return noCores
 
     def restoreCores(self, n=INF):
@@ -203,7 +203,7 @@ class ReductiveBin(SimpleBin):
                 lengthOverhead = futureLength - self.length
                 bestToReduce = task
         if bestToReduce is not None:
-            bestToReduce.reduce()
+            bestToReduce.reduceCores()
         return bestToReduce
 
     def _restoreReduced(self, reduced=None):
@@ -225,6 +225,27 @@ class ReductiveBin(SimpleBin):
                 reduced[redTask] = 0
             reduced[redTask] += 1
         return True
+
+    def add(self, task):
+        if self._closed:
+            raise Exception("Bin already closed")
+        for rtype, limit in self.maxDims.items():
+            if rtype == Resource.Type.CPU_core:
+                continue
+            assert rtype in task.dims
+            assert rtype in self.maxDims
+            if task.dims[rtype] + self.currentDims[rtype] > limit:
+                return False
+        self._tasks.add(task)
+        if self._refitJobs():
+            return True
+        self._tasks.remove(task)
+        return False
+
+    def remove(self, task):
+        super().remove(task)
+        self._restoreReduced()
+        assert self._refitJobs()
 
 
 
