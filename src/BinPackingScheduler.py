@@ -25,12 +25,27 @@ class Task:
         self.dims[cores[0][0]] = len(cores)
         self.startpoint = None
 
+    def reduceCores(self, n=-1):
+        noCores = self.dims[Resource.Type.CPU_core]
+        if n <= 0:
+            n += noCores
+        if n <= 0:
+            raise Exception("Task has to have at leat 1 core assigned")
+        if n < noCores:
+            self.dims[Resource.Type.CPU_core] = noCores
+        return noCores
+
+    def restoreCores(self, n=INF):
+        maxCores = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
+                                  self.job.resourceRequest)))
+        currentCores = self.dims[Resource.Type.CPU_core]
+        self.dims[Resource.Type.CPU_core] = min(maxCores, currentCores + n)
+        return self.dims[Resource.Type.CPU_core]
+
     @property
     def length(self):
         ops = self.job.operations
         noCores = self.dims[Resource.Type.CPU_core]
-        #  noCores = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
-        #                            self.vm.resourceRequest)))
         return ops / noCores
 
     @property
@@ -168,6 +183,46 @@ class SimpleBin:
         if not self._closed:
             raise Exception("Bin not closed yet")
         return self._tasks.pop(0).vm
+
+
+
+class ReductiveBin(SimpleBin):
+
+    def _reduceOne(self):
+        bestToReduce = None
+        lengthOverhead = INF
+        for task in self._tasks:
+            noCores = task.dims[Resource.Type.CPU_core]
+            if noCores < 2:
+                continue
+            futureLength = (task.length * noCores) / (noCores - 1)
+            if futureLength - self.length < lengthOverhead:
+                lengthOverhead = futureLength - self.length
+                bestToReduce = task
+        if bestToReduce is not None:
+            bestToReduce.reduce()
+            self.currentDims[Resource.Type.CPU_core] -= 1
+        return bestToReduce
+
+    def _restoreReduced(self, reduced=None):
+        if reduced == None:
+            for task in self._tasks:
+                task.restoreCores()
+        else:
+            for task, n in reduced.items():
+                task.restoreCores(n)
+
+    def _refitJobs(self):
+        reduced = {}
+        while self.currentDims[Resource.Type.CPU_core] > self.maxDims[Resource.Type.CPU_core]:
+            redTask = self._reduceOne()
+            if redTask is None:
+                self._restoreReduced(reduced)
+                return False
+            if redTask not in reduced.keys():
+                reduced[redTask] = 0
+            reduced[redTask] += 1
+        return True
 
 
 
