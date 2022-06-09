@@ -63,7 +63,7 @@ for job in jobs:
                                 job.resourceRequest)))
     totalOps += ops
     theoreticalTotalTime += ops / (min(noThreads, args.NO_CORES) * args.CPU_SPEED)
-    vm = CreateVM.minimal([job])
+    vm = CreateVM.minimal([job], ownCores=True)
     vm.scheduleJob(job)
     machine.scheduleVM(vm)
 

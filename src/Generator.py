@@ -91,6 +91,7 @@ class CreateVM:
     def minimal(jobs,
                 coreLimit=INF,
                 scheduler=lambda m: JobSchedulerSimple(m, autofree=True),
+                ownCores=False,
                ):
         name = "vm_for"
         noCores = 0
@@ -109,7 +110,7 @@ class CreateVM:
         noCores = min(noCores, coreLimit)
         req = [ResourceRequest(Resource.Type.RAM, ramSize)]
         for _ in range(noCores):
-            req += [ResourceRequest(Resource.Type.CPU_core, INF, shared=True)]
+            req += [ResourceRequest(Resource.Type.CPU_core, INF, shared=not ownCores)]
         vm = VirtualMachine(name, req, scheduler)
         return vm
 
