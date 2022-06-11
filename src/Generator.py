@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from Job import *
 from Resource import *
 from Machine import *
-from Schedulers import *
+from scheduling.BaseSchedulers import *
 
 
 class JobGenerator(metaclass=ABCMeta):

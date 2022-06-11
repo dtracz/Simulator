@@ -3,8 +3,8 @@ from numpy import random
 from Simulator import *
 from Resource import *
 from Machine import *
-from Schedulers import *
-from BinPackingScheduler import *
+from scheduling.BaseSchedulers import *
+from scheduling.BinPackingScheduler import *
 from Generator import *
 
 

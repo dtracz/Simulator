@@ -1,7 +1,7 @@
 import nose
 from unittest import TestCase
 from toolkit import INF
-from BinPackingScheduler import Task, Timeline
+from scheduling.BinPackingScheduler import Task, Timeline
 from Job import *
 from Machine import *
 from Generator import CreateVM
