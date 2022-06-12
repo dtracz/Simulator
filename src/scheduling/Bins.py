@@ -67,12 +67,12 @@ class SimpleBin:
             raise Exception("Bin not closed yet")
         if len(self._tasks) == 0:
             return None
-        return self._tasks[0].vm
+        return self._tasks[0]
 
     def popNext(self):
         if not self._closed:
             raise Exception("Bin not closed yet")
-        return self._tasks.pop(0).vm
+        return self._tasks.pop(0)
 
 
 

@@ -55,18 +55,19 @@ class BinPackingScheduler(VMSchedulerSimple):
         if self._currentBin is None:
             if not self._loadNextBin():
                 return None
-        vm = self._currentBin.getNext()
-        if vm is None:
+        task = self._currentBin.getNext()
+        if task is None:
             if not self._loadNextBin():
                 return None
-            vm = self._currentBin.getNext()
-        return vm
+            task = self._currentBin.getNext()
+        return task.vm
 
     def popFront(self):
-        return self._currentBin.popNext()
+        task = self._currentBin.popNext()
+        return task.vm
 
     @staticmethod
-    def evalFitting(bucket, task):
+    def checkFitting(bucket, task):
         lgthDiff = abs(bucket.length - task.length) / bucket.length
         if lgthDiff > 0.3:
             return None
@@ -88,7 +89,7 @@ class BinPackingScheduler(VMSchedulerSimple):
         for key in self._maxDims.keys():
             bestScore[key] = -INF
         for bucket in self._bins:
-            score = self.evalFitting(bucket, task)
+            score = self.checkFitting(bucket, task)
             if score is None:
                 continue
             if score[RType.CPU_core] > bestScore[RType.CPU_core]:
@@ -97,6 +98,7 @@ class BinPackingScheduler(VMSchedulerSimple):
         if bestBucket is None:
             self._bins += [self.BinClass(self._maxDims)]
             bestBucket = self._bins[-1]
-        if not bestBucket.add(task):
+        added = bestBucket.add(task)
+        if not added:
             raise Exception(f"{vm.name} cannot be fit into any bucket")
 
