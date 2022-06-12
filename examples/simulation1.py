@@ -31,6 +31,7 @@ if args.MAX_THREADS < 0:
 BINS = {
     'Simple': SimpleBin,
     'Reductive': ReductiveBin,
+    'Timeline': TimelineBin,
 }
 Bin = BINS[args.BIN_TYPE]
 SCHEDULERS = {

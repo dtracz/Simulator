@@ -114,3 +114,13 @@ class Timeline:
     def timepoints(self):
         return self._dict.keys()
 
+    def __iter__(self):
+        tasksSet = set()
+        tasksList = []
+        for tasksAt in self._dict.values():
+            for task in tasksAt:
+                if task not in tasksSet:
+                    tasksList += [task]
+                    tasksSet.add(task)
+        return iter(tasksList)
+

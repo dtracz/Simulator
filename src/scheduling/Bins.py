@@ -4,6 +4,7 @@ from Events import *
 from Resource import *
 from Machine import *
 from Job import *
+from scheduling.Task import *
 
 
 class SimpleBin:
@@ -41,8 +42,6 @@ class SimpleBin:
     def remove(self, task):
         if self._closed:
             raise Exception("Bin already closed")
-        if task not in self._tasks:
-            raise KeyError(f"{self} does not contain {task}")
         self._tasks.remove(task)
 
     def efficiency(self, tasks=None):
@@ -53,7 +52,7 @@ class SimpleBin:
         eff = {}
         for rtype in rtypes:
             usage = 0
-            for task in self._tasks:
+            for task in tasks:
                 usage += task.length * task.dims[rtype]
             eff[rtype] = usage / (self.maxDims[rtype] * length)
         return eff
@@ -134,4 +133,44 @@ class ReductiveBin(SimpleBin):
         super().remove(task)
         self._restoreReduced()
         assert self._refitJobs()
+
+
+
+class TimelineBin(SimpleBin):
+    def __init__(self, maxDims):
+        super().__init__(maxDims)
+        self._tasks = Timeline()
+
+    @property
+    def length(self):
+        tp = self._tasks.timepoints()
+        return tp[-1] - tp[0]
+
+    @property
+    def currentDims(self):
+        raise NotImplementedError("TimelineBin has no 'currentDims'")
+
+    def add(self, task):
+        if self._closed:
+            raise Exception("Bin already closed")
+        for rtype, limit in self.maxDims.items():
+            if task.dims[rtype] > limit:
+                return False
+        timepoints = self._tasks.timepoints()
+        if len(timepoints) == 0:
+            self._tasks.add(0, task)
+            return True
+        for time in timepoints:
+            tasksAt = self._tasks[time]
+            occupied = Task.sum(tasksAt)
+            for rtype, limit in self.maxDims.items():
+                if occupied.get(rtype, 0) + task.dims[rtype] > self.maxDims[rtype]:
+                    continue
+                self._tasks.add(time, task)
+                return True
+        raise Exception("This should never happen")
+
+    def close(self):
+        self._closed = True
+        self._tasks = list(self._tasks)
 
