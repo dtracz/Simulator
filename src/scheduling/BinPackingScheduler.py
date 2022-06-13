@@ -19,7 +19,7 @@ class BinPackingScheduler(VMSchedulerSimple):
     """
 
 
-    def __init__(self, machine, BinClass=SimpleBin):
+    def __init__(self, machine, BinClass=SimpleBin, awaitBins=False):
         super().__init__(machine)
         self.BinClass = BinClass
         self._maxDims = {}
@@ -33,6 +33,7 @@ class BinPackingScheduler(VMSchedulerSimple):
         self._maxDims[cores[0].rtype] = len(cores)
         self._bins = []
         self._currentBin = None
+        self._listener = EventInspector() if awaitBins else None
 
     @property
     def vmsLeft(self):
@@ -42,6 +43,8 @@ class BinPackingScheduler(VMSchedulerSimple):
         return n
 
     def _loadNextBin(self):
+        if self._listener is not None and not self._listener.allRegistered():
+            return False
         if len(self._bins) == 0:
             return False
         self._currentBin = max(self._bins,
@@ -64,6 +67,8 @@ class BinPackingScheduler(VMSchedulerSimple):
 
     def popFront(self):
         task = self._currentBin.popNext()
+        if self._listener is not None:
+            self._listener.addExpectation(what=NType.JobFinish, job=task.job)
         return task.vm
 
     @staticmethod

@@ -18,6 +18,7 @@ parser.add_argument('--max-threads', dest='MAX_THREADS', default=-1, type=int)
 parser.add_argument('--seed', dest='SEED', default=1, type=int)
 parser.add_argument('--scheduler', dest='SCHEDULER', default="Simple", type=str,
                     help='options: Simple, BinPacking')
+parser.add_argument('--sep-bins', dest='SEP_BINS', action="store_true")
 parser.add_argument('--bin-type', dest='BIN_TYPE', default="Simple", type=str,
                     help='options: Simple, Reductive')
 args = parser.parse_args()
@@ -36,7 +37,8 @@ BINS = {
 Bin = BINS[args.BIN_TYPE]
 SCHEDULERS = {
     'Simple': VMSchedulerSimple,
-    'BinPacking': lambda *args, **kwargs: BinPackingScheduler(*args, **kwargs, BinClass=Bin),
+    'BinPacking': lambda *largs, **kwargs: \
+        BinPackingScheduler(*largs, **kwargs, BinClass=Bin, awaitBins=args.SEP_BINS),
 }
 Scheduler = SCHEDULERS[args.SCHEDULER]
 
