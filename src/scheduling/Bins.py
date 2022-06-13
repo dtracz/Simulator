@@ -160,15 +160,24 @@ class TimelineBin(SimpleBin):
         if len(timepoints) == 0:
             self._tasks.add(0, task)
             return True
+        lastOK = None
         for time in timepoints:
             tasksAt = self._tasks[time]
             occupied = Task.sum(tasksAt)
+            allOK = True
             for rtype, limit in self.maxDims.items():
-                if occupied.get(rtype, 0) + task.dims[rtype] > self.maxDims[rtype]:
-                    continue
-                self._tasks.add(time, task)
-                return True
-        raise Exception("This should never happen")
+                allOK *= occupied.get(rtype, 0) + task.dims[rtype] \
+                      <= self.maxDims[rtype]
+            if allOK:
+                if lastOK is None:
+                    lastOK = time
+                elif time - lastOK >= task.length:
+                    break
+            else:
+                lastOK = None
+        assert lastOK is not None
+        self._tasks.add(lastOK, task)
+        return True
 
     def close(self):
         self._closed = True
