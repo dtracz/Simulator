@@ -118,6 +118,8 @@ class Timeline:
         tasksSet = set()
         tasksList = []
         for tasksAt in self._dict.values():
+            tasksAt = list(tasksAt)
+            tasksAt.sort(key=lambda t: t.job._index)
             for task in tasksAt:
                 if task not in tasksSet:
                     tasksList += [task]
