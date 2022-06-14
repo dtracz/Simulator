@@ -29,11 +29,16 @@ if args.SEED >= 0:
 if args.MAX_THREADS < 0:
     args.MAX_THREADS = args.NO_CORES
 
+OrderedTimelineBinLF = OrderedTimelineBinClass(
+    orderAdd    = orderLongestFirst,
+    orderRemove = orderLongestFirst,
+    orderClose  = orderExhausive,
+)
 BINS = {
     'Simple': SimpleBin,
     'Reductive': ReductiveBin,
     'Timeline': TimelineBin,
-    'OrderedTimeline': OrderedTimelineBin,
+    'OrderedTimeline': OrderedTimelineBinLF,
 }
 Bin = BINS[args.BIN_TYPE]
 SCHEDULERS = {

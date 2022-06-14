@@ -1,3 +1,4 @@
+from itertools import permutations
 from toolkit import *
 from Simulator import *
 from Events import *
@@ -150,19 +151,20 @@ class TimelineBin(SimpleBin):
     def currentDims(self):
         raise NotImplementedError("TimelineBin has no 'currentDims'")
 
-    def _add(self, task):
-        timepoints = self._tasks.timepoints()
+    @staticmethod
+    def addToTimeline(tasks, maxDims, task):
+        timepoints = tasks.timepoints()
         if len(timepoints) == 0:
-            self._tasks.add(0, task)
+            tasks.add(0, task)
             return True
         lastOK = None
         for time in timepoints:
-            tasksAt = self._tasks[time]
+            tasksAt = tasks[time]
             occupied = Task.sum(tasksAt)
             allOK = True
-            for rtype, limit in self.maxDims.items():
+            for rtype, limit in maxDims.items():
                 allOK *= occupied.get(rtype, 0) + task.dims[rtype] \
-                      <= self.maxDims[rtype]
+                      <= maxDims[rtype]
             if allOK:
                 if lastOK is None:
                     lastOK = time
@@ -171,7 +173,7 @@ class TimelineBin(SimpleBin):
             else:
                 lastOK = None
         assert lastOK is not None
-        self._tasks.add(lastOK, task)
+        tasks.add(lastOK, task)
         return True
 
     def add(self, task):
@@ -180,7 +182,7 @@ class TimelineBin(SimpleBin):
         for rtype, limit in self.maxDims.items():
             if task.dims[rtype] > limit:
                 return False
-        return self._add(task)
+        return self.addToTimeline(self._tasks, self.maxDims, task)
 
     def close(self):
         self._tasks = list(self._tasks)
@@ -194,15 +196,15 @@ class OrderedTimelineBin(TimelineBin):
         self._prevTl = None
 
     @staticmethod
-    def _orderAdd(timeline):
+    def _orderAdd(timeline, maxDims):
         return timeline
 
     @staticmethod
-    def _orderRemove(timeline):
+    def _orderRemove(timeline, maxDims):
         return timeline
 
     @staticmethod
-    def _orderClose(timeline):
+    def _orderClose(timeline, maxDims):
         return timeline
 
     def add(self, task):
@@ -213,8 +215,8 @@ class OrderedTimelineBin(TimelineBin):
                 return False
         prevTl = self._prevTl
         self._prevTl = self._tasks.copy()
-        assert self._add(task)
-        self._tasks = self._orderAdd(self._tasks)
+        assert self.addToTimeline(self._tasks, self.maxDims, task)
+        self._tasks = self._orderAdd(self._tasks, self.maxDims)
         return True
 
     def remove(self, task):
@@ -227,11 +229,51 @@ class OrderedTimelineBin(TimelineBin):
                 self._prevTl = None
                 return
         self._tasks.remove(task)
-        self._tasks = self._orderRemove(self._tasks)
+        self._tasks = self._orderRemove(self._tasks, self.maxDims)
         self._prevTl = None
 
     def close(self):
-        tasks = self._orderClose(self._tasks)
+        tasks = self._orderClose(self._tasks, self.maxDims)
         self._tasks = list(tasks)
         self._closed = True
+
+
+
+def orderLongestFirst(timeline, maxDims):
+    tasks = list(timeline.allTasks)
+    tasks.sort(key=lambda t: -t.length)
+    new_tl = Timeline()
+    for task in tasks:
+        assert TimelineBin.addToTimeline(new_tl, maxDims, task)
+    return new_tl
+
+
+def orderExhausive(timeline, maxDims):
+    tasks = list(timeline.allTasks)
+    best_tl = None
+    best_score = INF
+    for tasksPerm in permutations(tasks):
+        new_tl = Timeline()
+        for task in tasksPerm:
+            assert TimelineBin.addToTimeline(new_tl, maxDims, task)
+        if new_tl.timepoints()[-1] - new_tl.timepoints()[0] < best_score:
+            best_tl = new_tl
+    return best_tl
+
+
+def OrderedTimelineBinClass(orderAdd, orderRemove, orderClose):
+    class _OrderedTimelineBin(OrderedTimelineBin):
+        @staticmethod
+        def _orderAdd(timeline, maxDims):
+            return orderAdd(timeline, maxDims)
+
+        @staticmethod
+        def _orderRemove(timeline, maxDims):
+            return orderRemove(timeline, maxDims)
+
+        @staticmethod
+        def _orderClose(timeline, maxDims):
+            return orderClose(timeline, maxDims)
+
+    return _OrderedTimelineBin
 
