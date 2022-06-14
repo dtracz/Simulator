@@ -1,3 +1,4 @@
+#  from multiset import Multiset
 from toolkit import *
 from Simulator import *
 from Events import *
@@ -66,6 +67,7 @@ class Task:
 class Timeline:
     def __init__(self):
         self._dict = Map()
+        self.allTasks = Multiset()
 
     def _completePoint(self, time):
         assert time in self.timepoints()
@@ -87,6 +89,8 @@ class Timeline:
             del self._dict[time]
 
     def add(self, time, task):
+        if len(self.timepoints()) > 0:
+            assert len(self._dict[self.timepoints()[-1]]) == 0
         if time not in self._dict.keys():
             self._dict[time] = set()
             self._completePoint(time)
@@ -95,14 +99,22 @@ class Timeline:
             self._completePoint(time + task.length)
         for t in self._dict.irange(time, time + task.length, (True, False)):
             self._dict[t].add(task)
+        self.allTasks.add(task)
         task.startpoint = time
+        if len(self.timepoints()) > 0:
+            assert len(self._dict[self.timepoints()[-1]]) == 0
 
     def remove(self, task):
+        if len(self.timepoints()) > 0:
+            assert len(self._dict[self.timepoints()[-1]]) == 0
+        self.allTasks.remove(task, 1)
         for t in self._dict.irange(task.startpoint, task.endpoint, (True, False)):
             self._dict[t].remove(task)
         self._clearPoint(task.startpoint)
         self._clearPoint(task.endpoint)
         task.startpoint = None
+        if len(self.timepoints()) > 0:
+            assert len(self._dict[self.timepoints()[-1]]) == 0
 
     def __getitem__(self, time):
         assert time >= 0
@@ -125,4 +137,11 @@ class Timeline:
                     tasksList += [task]
                     tasksSet.add(task)
         return iter(tasksList)
+
+    def copy(self):
+        tl = Timeline()
+        for time, tasks in self._dict.items():
+            tl._dict[time] = tasks.copy()
+        tl.allTasks = self.allTasks.copy()
+        return tl
 

@@ -58,9 +58,9 @@ class SimpleBin:
         return eff
 
     def close(self):
-        self._closed = True
         self._tasks = list(self._tasks)
         self._tasks.sort(key=lambda t: t.job._index)
+        self._closed = True
 
     def getNext(self):
         if not self._closed:
@@ -150,12 +150,7 @@ class TimelineBin(SimpleBin):
     def currentDims(self):
         raise NotImplementedError("TimelineBin has no 'currentDims'")
 
-    def add(self, task):
-        if self._closed:
-            raise Exception("Bin already closed")
-        for rtype, limit in self.maxDims.items():
-            if task.dims[rtype] > limit:
-                return False
+    def _add(self, task):
         timepoints = self._tasks.timepoints()
         if len(timepoints) == 0:
             self._tasks.add(0, task)
@@ -179,7 +174,64 @@ class TimelineBin(SimpleBin):
         self._tasks.add(lastOK, task)
         return True
 
+    def add(self, task):
+        if self._closed:
+            raise Exception("Bin already closed")
+        for rtype, limit in self.maxDims.items():
+            if task.dims[rtype] > limit:
+                return False
+        return self._add(task)
+
     def close(self):
-        self._closed = True
         self._tasks = list(self._tasks)
+        self._closed = True
+
+
+
+class OrderedTimelineBin(TimelineBin):
+    def __init__(self, maxDims):
+        super().__init__(maxDims)
+        self._prevTl = None
+
+    @staticmethod
+    def _orderAdd(timeline):
+        return timeline
+
+    @staticmethod
+    def _orderRemove(timeline):
+        return timeline
+
+    @staticmethod
+    def _orderClose(timeline):
+        return timeline
+
+    def add(self, task):
+        if self._closed:
+            raise Exception("Bin already closed")
+        for rtype, limit in self.maxDims.items():
+            if task.dims[rtype] > limit:
+                return False
+        prevTl = self._prevTl
+        self._prevTl = self._tasks.copy()
+        assert self._add(task)
+        self._tasks = self._orderAdd(self._tasks)
+        return True
+
+    def remove(self, task):
+        if self._closed:
+            raise Exception("Bin already closed")
+        if self._prevTl is not None:
+            diff = self._tasks.allTasks.difference(self._prevTl.allTasks)
+            if len(diff) == 1 and task in diff:
+                self._tasks = self._prevTl
+                self._prevTl = None
+                return
+        self._tasks.remove(task)
+        self._tasks = self._orderRemove(self._tasks)
+        self._prevTl = None
+
+    def close(self):
+        tasks = self._orderClose(self._tasks)
+        self._tasks = list(tasks)
+        self._closed = True
 

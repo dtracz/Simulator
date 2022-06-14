@@ -33,6 +33,7 @@ BINS = {
     'Simple': SimpleBin,
     'Reductive': ReductiveBin,
     'Timeline': TimelineBin,
+    'OrderedTimeline': OrderedTimelineBin,
 }
 Bin = BINS[args.BIN_TYPE]
 SCHEDULERS = {
