@@ -66,15 +66,15 @@ class VMPlacmentPolicySimple:
         self._schedulers = {}
         self._noVMs = MultiDictRevDict()
         for machine in machines:
-            self._schedulers[machine] = VMSchedulerSimple(machine)
+            self._schedulers[machine] = machine._vmScheduler
             self._noVMs.add(0, machine)
 
     def placeVM(self, vm):
         tried = []
         while len(self._noVMs) > 0:
             noVMs, machine = self._noVMs.popitem()
-            scheduler = self._schedulers[machine]
-            if scheduler._machine.isFittable(vm):
+            if machine.isFittable(vm):
+                scheduler = self._schedulers[machine]
                 scheduler.schedule(vm)
                 self._noVMs.add(noVMs+1, machine)
                 break
