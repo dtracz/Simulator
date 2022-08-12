@@ -4,7 +4,7 @@ from Simulator import *
 from Resource import *
 from Machine import *
 from Job import *
-from Schedulers import *
+from scheduling.BaseSchedulers import *
 
 
 class SchedulersTests(SimulatorTests):
