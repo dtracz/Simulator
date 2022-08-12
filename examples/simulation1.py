@@ -15,12 +15,12 @@ parser.add_argument('--ram', dest='RAM_SIZE', default=16, type=float)
 parser.add_argument('--jobs', dest='NO_JOBS', default=100, type=int)
 parser.add_argument('--dist-param', dest='TH_BIN_DIST_PARAM', default=0.1, type=float)
 parser.add_argument('--max-threads', dest='MAX_THREADS', default=-1, type=int)
-parser.add_argument('--seed', dest='SEED', default=1, type=int)
+parser.add_argument('--seed', dest='SEED', default=-1, type=int)
 parser.add_argument('--scheduler', dest='SCHEDULER', default="Simple", type=str,
                     help='options: Simple, BinPacking')
 parser.add_argument('--sep-bins', dest='SEP_BINS', action="store_true")
 parser.add_argument('--bin-type', dest='BIN_TYPE', default="Simple", type=str,
-                    help='options: Simple, Reductive')
+                    help='options: Simple, Reductive, Timeline, OrderedTimeline')
 args = parser.parse_args()
 
 if args.SEED >= 0:
@@ -81,7 +81,7 @@ sim.simulate()
 
 assert machine._vmScheduler.vmsLeft == 0
 
-print("simulation time:", sim.time)
-print("theoretical sequence execution time:", theoreticalTotalTime)
+print("simulation time:               ", sim.time)
+print("sequence execution time:       ", theoreticalTotalTime)
 print("theoretical best possible time:", totalOps / (args.CPU_SPEED * args.NO_CORES))
 
