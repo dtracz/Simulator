@@ -1,10 +1,11 @@
 import argparse
-from numpy import random
+import numpy as np
 from Simulator import *
 from Resource import *
 from Machine import *
 from scheduling.BaseSchedulers import *
 from scheduling.BinPackingScheduler import *
+from scheduling.VMPlacementPolicies import *
 from Generator import *
 
 
@@ -18,10 +19,12 @@ parser.add_argument('--scheduler', dest='SCHEDULER', default="Simple", type=str,
 parser.add_argument('--sep-bins', dest='SEP_BINS', action="store_true")
 parser.add_argument('--bin-type', dest='BIN_TYPE', default="Simple", type=str,
                     help='options: Simple, Reductive, Timeline, OrderedTimeline')
+parser.add_argument('--placement-policy', dest='PLACEMENT_POLICY', default="Simple", type=str,
+                    help='options: Simple, Random')
 args = parser.parse_args()
 
 if args.SEED >= 0:
-    random.seed(args.SEED)
+    np.random.seed(args.SEED)
 
 if args.MAX_THREADS < 0:
     args.MAX_THREADS = 4
@@ -44,6 +47,12 @@ SCHEDULERS = {
         BinPackingScheduler(*largs, **kwargs, BinClass=Bin, awaitBins=args.SEP_BINS),
 }
 VMScheduler = SCHEDULERS[args.SCHEDULER]
+
+PLACEMENT_POLICIES = {
+    'Simple': VMPlacementPolicySimple,
+    'Random': VMPlacementPolicyRandom,
+}
+VMPlacementPolicy = PLACEMENT_POLICIES[args.PLACEMENT_POLICY]
 
 
 no_machines = 0
@@ -68,7 +77,7 @@ infrastructure = Infrastructure.getInstance(
         getMachine(8, 4*[CPU_SPEED], VMScheduler),
         getMachine(8, 4*[CPU_SPEED], VMScheduler),
     ],
-    VMPlacmentPolicySimple,
+    VMPlacementPolicy,
 )
 max_NO_CORES = 8
 total_NO_CORES = 32

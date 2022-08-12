@@ -61,7 +61,7 @@ class VMSchedulerSimple(NotificationListener):
 
 
 
-class VMPlacmentPolicySimple:
+class VMPlacementPolicySimple:
     def __init__(self, machines):
         self._schedulers = {}
         self._noVMs = MultiDictRevDict()
