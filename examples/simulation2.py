@@ -106,6 +106,9 @@ for job in jobs:
 sim = Simulator.getInstance()
 sim.simulate()
 
+for machine in infrastructure.machines:
+    assert machine._vmScheduler.noVMsLeft == 0
+
 print("simulation time:               ", sim.time)
 print("sequence execution time:       ", theoreticalTotalTime)
 print("theoretical best possible time:", totalOps / (CPU_SPEED * total_NO_CORES))

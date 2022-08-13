@@ -13,8 +13,12 @@ class VMSchedulerSimple(NotificationListener):
         self._suspended = False
 
     @property
-    def vmsLeft(self):
+    def noVMsLeft(self):
         return len(self._vmQueue)
+
+    @property
+    def vms(self):
+        return self._vmQueue
 
     def head(self):
         if len(self._vmQueue) == 0:

@@ -60,8 +60,8 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
         cores = list(filter(lambda r: r.rtype == RType.CPU_core, machine.resources))
         assert len(cores) > 0
         resource_info = [len(cores), rams[0].value]
-        vms = machine._vmScheduler.vms #TODO
-        vms_data = np.array[self._getTaskInfo(vm) for vm in vms])
+        vms = machine._vmScheduler.vms
+        vms_data = np.array([self._getTaskInfo(vm) for vm in vms])
         op_mean, core_mean, ram_mean = vms_data.mean(axis=0)
         op_std, core_std, ram_std = vms_data.std(axis=0)
         no_tasks = vms_data.shape[0]
@@ -74,7 +74,7 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
     def placeVM(self, vm):
         state_info = [self._getMachineInfo(machine) for machine in self.machines]
         state_info = np.array(state_info)
-        task info = self._getTaskInfo(vm)
+        task_info = self._getTaskInfo(vm)
         scores = self._model(state_info, task_info)
         ordered_indices = np.argsort(-scores)
         for i in ordered_indices:

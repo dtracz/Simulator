@@ -79,7 +79,7 @@ for job in jobs:
 sim = Simulator.getInstance()
 sim.simulate()
 
-assert machine._vmScheduler.vmsLeft == 0
+assert machine._vmScheduler.noVMsLeft == 0
 
 print("simulation time:               ", sim.time)
 print("sequence execution time:       ", theoreticalTotalTime)

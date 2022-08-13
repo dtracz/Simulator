@@ -36,11 +36,18 @@ class BinPackingScheduler(VMSchedulerSimple):
         self._listener = EventInspector() if awaitBins else None
 
     @property
-    def vmsLeft(self):
+    def noVMsLeft(self):
         n = 0
         for bucket in self._bins:
             n += len(bucket._tasks)
         return n
+
+    @property
+    def vms(self):
+        vms = []
+        for bucket in self._bins:
+            vms += bucket.vms
+        return vms
 
     def _loadNextBin(self):
         if self._listener is not None and not self._listener.allRegistered():
