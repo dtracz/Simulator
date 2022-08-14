@@ -25,10 +25,10 @@ class VMPlacementPolicyRandom(VMPlacementPolicySimple):
 
 
 class VMPlacementPolicyAI(VMPlacementPolicySimple):
-    def __init__(self, machines):
+    def __init__(self, machines, ModelClass=None):
         super().__init__(machines)
         self._noVMs = list(machines)[:]
-        self._model = None #TODO
+        self._model = ModelClass(3, (len(machines), 10), len(machines))
 
     @staticmethod
     def _getTaskInfo(task):
@@ -61,24 +61,27 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
         assert len(cores) > 0
         resource_info = [len(cores), rams[0].value]
         vms = machine._vmScheduler.vms
-        vms_data = np.array([self._getTaskInfo(vm) for vm in vms])
-        op_mean, core_mean, ram_mean = vms_data.mean(axis=0)
-        op_std, core_std, ram_std = vms_data.std(axis=0)
-        no_tasks = vms_data.shape[0]
-        total_length = vms_data[:,0].sum()
-        vms_info = [no_tasks, total_length/len(cores),
-                    op_mean, op_std, core_mean, core_std, ram_mean, ram_std]
+        if len(vms) > 0:
+            vms_data = np.array([VMPlacementPolicyAI._getTaskInfo(vm) for vm in vms])
+            op_mean, core_mean, ram_mean = vms_data.mean(axis=0)
+            op_std, core_std, ram_std = vms_data.std(axis=0)
+            no_tasks = vms_data.shape[0]
+            total_length = vms_data[:,0].sum()
+            vms_info = [no_tasks, total_length/len(cores),
+                        op_mean, op_std, core_mean, core_std, ram_mean, ram_std]
+        else:
+            vms_info = 8*[0]
         info = resource_info + vms_info
         return np.array(info)
 
     def placeVM(self, vm):
-        state_info = [self._getMachineInfo(machine) for machine in self.machines]
+        state_info = [self._getMachineInfo(machine) for machine in self._noVMs]
         state_info = np.array(state_info)
         task_info = self._getTaskInfo(vm)
-        scores = self._model(state_info, task_info)
+        scores = self._model((state_info, task_info))
         ordered_indices = np.argsort(-scores)
         for i in ordered_indices:
-            machine = self.machines[i]
+            machine = self._noVMs[i]
             if machine.isFittable(vm):
                 scheduler = self._schedulers[machine]
                 scheduler.schedule(vm)

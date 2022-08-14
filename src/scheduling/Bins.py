@@ -21,7 +21,7 @@ class SimpleBin:
 
     @property
     def vms(self):
-        return list(self._tasks)
+        return [task.vm for task in self._tasks]
 
     @property
     def currentDims(self):
@@ -153,7 +153,7 @@ class TimelineBin(SimpleBin):
 
     @property
     def vms(self):
-        return [task.vm for vm in self._tasks.allTasks]
+        return [task.vm for task in self._tasks.allTasks]
 
     @property
     def currentDims(self):

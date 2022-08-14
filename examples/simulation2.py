@@ -6,6 +6,7 @@ from Machine import *
 from scheduling.BaseSchedulers import *
 from scheduling.BinPackingScheduler import *
 from scheduling.VMPlacementPolicies import *
+from scheduling.Models import *
 from Generator import *
 
 
@@ -20,7 +21,9 @@ parser.add_argument('--sep-bins', dest='SEP_BINS', action="store_true")
 parser.add_argument('--bin-type', dest='BIN_TYPE', default="Simple", type=str,
                     help='options: Simple, Reductive, Timeline, OrderedTimeline')
 parser.add_argument('--placement-policy', dest='PLACEMENT_POLICY', default="Simple", type=str,
-                    help='options: Simple, Random')
+                    help='options: Simple, Random, AI')
+parser.add_argument('--model', dest='MODEL', default="Random", type=str,
+                    help='options: Random')
 args = parser.parse_args()
 
 if args.SEED >= 0:
@@ -48,9 +51,15 @@ SCHEDULERS = {
 }
 VMScheduler = SCHEDULERS[args.SCHEDULER]
 
+MODELS = {
+    'Random': RandomModel,
+}
+Model = MODELS[args.MODEL]
 PLACEMENT_POLICIES = {
     'Simple': VMPlacementPolicySimple,
     'Random': VMPlacementPolicyRandom,
+    'AI': lambda *largs, **kwargs: \
+        VMPlacementPolicyAI(*largs, **kwargs, ModelClass=Model),
 }
 VMPlacementPolicy = PLACEMENT_POLICIES[args.PLACEMENT_POLICY]
 
