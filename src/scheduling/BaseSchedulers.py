@@ -68,24 +68,24 @@ class VMSchedulerSimple(NotificationListener):
 class VMPlacementPolicySimple:
     def __init__(self, machines):
         self._schedulers = {}
-        self._noVMs = MultiDictRevDict()
+        self._machines = MultiDictRevDict() # {machine: noVMs}
         for machine in machines:
             self._schedulers[machine] = machine._vmScheduler
-            self._noVMs.add(0, machine)
+            self._machines.add(0, machine)
 
     def placeVM(self, vm):
         tried = []
-        while len(self._noVMs) > 0:
-            noVMs, machine = self._noVMs.popitem()
+        while len(self._machines) > 0:
+            noVMs, machine = self._machines.popitem()
             if machine.isFittable(vm):
                 scheduler = self._schedulers[machine]
                 scheduler.schedule(vm)
-                self._noVMs.add(noVMs+1, machine)
+                self._machines.add(noVMs+1, machine)
                 break
             tried += [(noVMs, machine)]
-        exausted = len(self._noVMs) == 0
+        exausted = len(self._machines) == 0
         for noVMs, machine in tried:
-            self._noVMs.add(noVMs, machine)
+            self._machines.add(noVMs, machine)
         if exausted:
             raise Exception(f"Non of the known machines is suitable for {vm.name}")
 

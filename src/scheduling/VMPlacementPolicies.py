@@ -11,11 +11,11 @@ from scheduling.BaseSchedulers import *
 class VMPlacementPolicyRandom(VMPlacementPolicySimple):
     def __init__(self, machines):
         super().__init__(machines)
-        self._noVMs = list(machines)[:]
+        self._machines = list(machines)[:]
 
     def placeVM(self, vm):
-        np.random.shuffle(self._noVMs)
-        for machine in self._noVMs:
+        np.random.shuffle(self._machines)
+        for machine in self._machines:
             if machine.isFittable(vm):
                 scheduler = self._schedulers[machine]
                 scheduler.schedule(vm)
@@ -27,7 +27,7 @@ class VMPlacementPolicyRandom(VMPlacementPolicySimple):
 class VMPlacementPolicyAI(VMPlacementPolicySimple):
     def __init__(self, machines, ModelClass=None):
         super().__init__(machines)
-        self._noVMs = list(machines)[:]
+        self._machines = list(machines)[:]
         self._model = ModelClass(3, (len(machines), 10), len(machines))
 
     @staticmethod
@@ -75,13 +75,13 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
         return np.array(info)
 
     def placeVM(self, vm):
-        state_info = [self._getMachineInfo(machine) for machine in self._noVMs]
+        state_info = [self._getMachineInfo(machine) for machine in self._machines]
         state_info = np.array(state_info)
         task_info = self._getTaskInfo(vm)
         scores = self._model((state_info, task_info))
         ordered_indices = np.argsort(-scores)
         for i in ordered_indices:
-            machine = self._noVMs[i]
+            machine = self._machines[i]
             if machine.isFittable(vm):
                 scheduler = self._schedulers[machine]
                 scheduler.schedule(vm)
