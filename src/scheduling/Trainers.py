@@ -18,8 +18,11 @@ class RandomTrainer:
         self._scores = -np.ones(epoch_size)*float('inf')
 
     def toVars(self, theta):
-        splitpoints = np.cumsum(self._var_shapes)[:-1]
+        var_sizes = np.prod(self._var_shapes, axis=1)
+        splitpoints = np.cumsum(var_sizes)[:-1]
         varList = np.array_split(theta, splitpoints)
+        for i, shape in enumerate(self._var_shapes):
+            varList[i] = varList[i].reshape(shape)
         return varList
 
     def scoreThetas(self):
@@ -31,7 +34,7 @@ class RandomTrainer:
 
     def getBests(self, n_bests):
         idc = np.argpartition(self._scores, -self._n_bests)[-self._n_bests:]
-        bests = self._theta[idc]
+        bests = self._thetas[idc]
         best_scores = self._scores[idc]
         return bests, best_scores
 
@@ -41,7 +44,7 @@ class RandomTrainer:
         self._thetas = np.random.normal(bests.mean(axis=0),
                                         bests.std(axis=0),
                                         (self._epoch_size, self._len_theta))
-        self._scores = -np.ones(epoch_size)*float('inf')
+        self._scores = -np.ones(self._epoch_size)*float('inf')
         return best_scores.mean()
 
     def train(self, n_steps):

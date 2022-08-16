@@ -28,7 +28,7 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
     def __init__(self, machines, ModelClass=None):
         super().__init__(machines)
         self._machines = list(machines)[:]
-        self._model = ModelClass(3, (len(machines), 10), len(machines))
+        self._model = ModelClass((len(machines), 10), 3, len(machines))
 
     @staticmethod
     def _getTaskInfo(task):
@@ -78,7 +78,12 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
         state_info = [self._getMachineInfo(machine) for machine in self._machines]
         state_info = np.array(state_info)
         task_info = self._getTaskInfo(vm)
+        # add batch dimension
+        state_info = np.expand_dims(state_info, 0)
+        task_info = np.expand_dims(task_info, 0)
         scores = self._model((state_info, task_info))
+        # remove batch dimension
+        scores = scores[0]
         ordered_indices = np.argsort(-scores)
         for i in ordered_indices:
             machine = self._machines[i]
