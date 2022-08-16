@@ -1,9 +1,10 @@
 import numpy as np
+from joblib import Parallel, delayed
 
 
 class RandomTrainer:
     def __init__(self, model, score_fun, epoch_size=100, n_bests=20,
-                 init_min=-1, init_max=1):
+                 init_min=-1, init_max=1, n_threads=6):
         self.model = model
         self.score_fun = score_fun
         self._epoch_size = epoch_size
@@ -16,6 +17,7 @@ class RandomTrainer:
         self._thetas = np.random.uniform(init_min, init_max,
                                          (epoch_size, self._len_theta))
         self._scores = -np.ones(epoch_size)*float('inf')
+        self._n_threads = n_threads
 
     def toVars(self, theta):
         var_sizes = np.prod(self._var_shapes, axis=1)
@@ -26,11 +28,14 @@ class RandomTrainer:
         return varList
 
     def scoreThetas(self):
-        for i in range(self._epoch_size):
+        def score_theta(i):
             varList = self.toVars(self._thetas[i])
             self.model.setVars(varList)
-            score = self.score_fun(self.model)
-            self._scores[i] = score
+            return self.score_fun(self.model)
+        scores = Parallel(n_jobs=self._n_threads)(
+                delayed(score_theta)(i) for i in range(self._epoch_size)
+        )
+        self._scores = np.array(scores)
 
     def getBests(self, n_bests):
         idc = np.argpartition(self._scores, -self._n_bests)[-self._n_bests:]
