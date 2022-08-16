@@ -108,6 +108,7 @@ class JobSchedulerSimple(NotificationListener):
             event = VMEnd(self._machine.host, self._machine)
             Simulator.getInstance().addEvent(now, event)
             self._finished = True
+            self.unregister()
             return True
         return False
 
