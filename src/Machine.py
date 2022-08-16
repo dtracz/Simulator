@@ -139,7 +139,7 @@ class Machine:
         assert resHolder.isAllocated == 1
         #  job.setResources(reqResMap)
         self.addUser(resHolder)
-        resHolder.host = self
+        resHolder.setHost(self)
         return True
 
     def free(self, resHolder):
@@ -152,7 +152,7 @@ class Machine:
             srcRes.delUser(resHolder)
         assert resHolder.isAllocated == 0
         self.delUser(resHolder)
-        resHolder.host = None
+        resHolder.unsetHost()
 
     def isFittable(self, resHolder):
         resources = {}
@@ -211,11 +211,9 @@ class VirtualMachine(Machine, ResourcesHolder):
     """
     def __init__(self, name, resourceRequest={},
                  getJobScheduler=lambda _: None,
-                 getVMScheduler=lambda _: None,
-                 host=None):
+                 getVMScheduler=lambda _: None):
         Machine.__init__(self, name, [], getJobScheduler, getVMScheduler)
         ResourcesHolder.__init__(self, resourceRequest)
-        self.host = host
         self._srcResMap = {}
         #  self.resourceRequest = resourceRequest
 

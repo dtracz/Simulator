@@ -136,7 +136,19 @@ class ResourcesHolder:
         self._resourceRequest = {} # {req: (srcRes, dstRes)}
         for req in resourceRequest:
             self._resourceRequest[req] = None
-        self.host = None
+        self._host = None
+
+    @property
+    def host(self):
+        return self._host
+
+    def setHost(self, host):
+        if self._host is not None:
+            raise Exception(f"{self.name} already has a host")
+        self._host = host
+
+    def unsetHost(self):
+        self._host = None
 
     @property
     def isAllocated(self):
