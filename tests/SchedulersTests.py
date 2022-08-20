@@ -137,3 +137,98 @@ class SchedulersTests(SimulatorTests):
         sim.simulate()
         assert sim.time == 650
 
+
+    def test_jobScheduling_withGPU(self):
+        inf = INF
+        resources = {
+            Resource(RType.CPU_core, 10),               # GHz
+            Resource(RType.RAM, 16),                    # GB
+            Resource(RType.GPU, 1664*1050),             # MHz
+        }
+        m0 = Machine("m0", resources,
+            getJobScheduler=lambda m: JobSchedulerSimple(m, autofree=True))
+
+        job0 = Job(500,
+                   [ResourceRequest(RType.CPU_core, inf),
+                    ResourceRequest(RType.GPU, 1024*1050),
+                    ResourceRequest(RType.RAM, 6)],
+               )
+        job1 = Job(1000,
+                   [ResourceRequest(RType.CPU_core, inf),
+                    ResourceRequest(RType.GPU, 1024*1050),
+                    ResourceRequest(RType.RAM, 6)],
+               )
+        job2 = Job(1000,
+                   [ResourceRequest(RType.CPU_core, inf),
+                    ResourceRequest(RType.GPU, 512*1050),
+                    ResourceRequest(RType.RAM, 6)],
+               )
+
+        m0.scheduleJob(job0)
+        m0.scheduleJob(job1)
+        m0.scheduleJob(job2)
+
+        sim = Simulator.getInstance()
+        sim.simulate()
+
+        assert sim.time == 250
+
+
+    def test_vmPlacement_withGPU(self):
+        inf = INF
+        resources0 = {
+            Resource(RType.CPU_core, 10),               # GHz
+            Resource(RType.RAM, 16),                    # GB
+            Resource(RType.GPU, 1664*1050),             # MHz
+        }
+        m0 = Machine("m0", resources0, lambda m: None, VMSchedulerSimple)
+        resources1 = {
+            Resource(RType.CPU_core, 10),               # GHz
+            Resource(RType.RAM, 16),                    # GB
+            Resource(RType.GPU, 1024*1050),             # MHz
+        }
+        m1 = Machine("m1", resources1, lambda m: None, VMSchedulerSimple)
+
+        infrastructure = Infrastructure(
+                [m0, m1],
+                VMPlacmentPolicySimple,
+        )
+
+        def getVM(vm_id, ram, gpu, req_jobs):
+            resourceReq = {
+                ResourceRequest(RType.CPU_core, inf, shared=True),
+                ResourceRequest(RType.RAM, ram),
+                ResourceRequest(RType.GPU, gpu),
+            }
+            vm = VirtualMachine(f"vm{vm_id}", resourceReq,
+                    lambda machine: JobSchedulerSimple(machine, autofree=True))
+            jobs = [
+                Job(500,
+                    [ResourceRequest(RType.CPU_core, inf),
+                     ResourceRequest(RType.GPU, 1024*1050),
+                     ResourceRequest(RType.RAM, 8)],
+                ),
+                Job(1000,
+                    [ResourceRequest(RType.CPU_core, inf),
+                     ResourceRequest(RType.GPU, 1024*1050),
+                     ResourceRequest(RType.RAM, 6)],
+                ),
+                Job(1000,
+                    [ResourceRequest(RType.CPU_core, inf),
+                     ResourceRequest(RType.GPU, 512*1050),
+                     ResourceRequest(RType.RAM, 6)],
+                ),
+            ]
+            for i in req_jobs:
+                vm.scheduleJob(jobs[i])
+            return vm
+
+        infrastructure.scheduleVM(getVM(0, 8, 1024*1050,[0]))
+        infrastructure.scheduleVM(getVM(1, 8, 1024*1050,[1,2]))
+        infrastructure.scheduleVM(getVM(2, 16, 1664*1050,[0,1,2]))
+        infrastructure.scheduleVM(getVM(3, 12, 1664*1050,[1,2]))
+
+        sim = Simulator.getInstance()
+        sim.simulate()
+        assert sim.time == 500
+
