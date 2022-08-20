@@ -104,3 +104,48 @@ class ResourceTests(SimulatorTests):
         sim.simulate()
         inspector.verify()
 
+
+    def test_3resources(self):
+        inf = INF
+        resources = {
+            Resource(RType.CPU_core, 10),               # GHz
+            Resource(RType.RAM, 16),                    # GB
+            Resource(RType.GPU, 1664*1050),             # MHz
+        }
+        m0 = Machine("m0", resources)
+
+        res0 = [
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.RAM,      5),         # GB
+            ResourceRequest(RType.GPU,      512*1050),  # MB
+        ]
+        res1 = [
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.RAM,      5),         # GB
+            ResourceRequest(RType.GPU,      1024*1050), # MB
+        ]
+        res2 = [
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.RAM,      5),         # GB
+            ResourceRequest(RType.GPU,      512*1050),  # MB
+        ]
+        job0 = Job(200, res0)
+        job1 = Job(300, res1)
+        job2 = Job(200, res2)
+
+        sim = Simulator.getInstance()
+        sim.addEvent(0, JobStart(job0, m0))
+        sim.addEvent(0, JobStart(job1, m0))
+        sim.addEvent(40, JobStart(job2, m0))
+
+        inspector = EventInspector([
+            {'time': 0, 'what': NType.JobStart, 'job': job0},
+            {'time': 0, 'what': NType.JobStart, 'job': job1},
+            {'time': 40, 'what': NType.JobFinish, 'job': job0},
+            {'time': 40, 'what': NType.JobStart, 'job': job2},
+            {'time': 60, 'what': NType.JobFinish, 'job': job1},
+            {'time': 70, 'what': NType.JobFinish, 'job': job2},
+        ])
+        sim.simulate()
+        inspector.verify()
+

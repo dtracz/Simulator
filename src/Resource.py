@@ -31,6 +31,7 @@ class Resource:
     class Type(Enum):
         CPU_core = 1
         RAM = 2
+        GPU = 3
 
         def __lt__(self, other):
             return self.value < other.value
