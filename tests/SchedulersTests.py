@@ -98,7 +98,7 @@ class SchedulersTests(SimulatorTests):
         }
         m1 = Machine("m1", resources, lambda m: None, VMSchedulerSimple)
 
-        infrastructure = Infrastructure.getInstance(
+        infrastructure = Infrastructure(
                 [m0, m1],
                 VMPlacmentPolicySimple,
         )
