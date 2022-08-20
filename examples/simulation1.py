@@ -50,9 +50,9 @@ Scheduler = SCHEDULERS[args.SCHEDULER]
 
 
 
-resources = { Resource(Resource.Type.RAM, args.RAM_SIZE) }
+resources = { Resource(RType.RAM, args.RAM_SIZE) }
 for _ in range(args.NO_CORES):
-    resources.add(Resource(Resource.Type.CPU_core, args.CPU_SPEED))
+    resources.add(Resource(RType.CPU_core, args.CPU_SPEED))
 machine = Machine("m0", resources, lambda m: None, Scheduler)
 
 gen = RandomJobGenerator(
@@ -68,7 +68,7 @@ totalOps = 0
 theoreticalTotalTime = 0
 for job in jobs:
     ops = job.operations
-    noThreads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
+    noThreads = len(list(filter(lambda r: r.rtype == RType.CPU_core,
                                 job.resourceRequest)))
     totalOps += ops
     theoreticalTotalTime += ops / (min(noThreads, args.NO_CORES) * args.CPU_SPEED)

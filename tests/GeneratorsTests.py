@@ -17,12 +17,12 @@ class GeneratorsTests(SimulatorTests):
         jobs = gen.getJobs(10)
         for job in jobs:
             assert job.operations == 10
-            coreReqs = list(filter(lambda r: r.rtype is Resource.Type.CPU_core,
+            coreReqs = list(filter(lambda r: r.rtype is RType.CPU_core,
                                    job.resourceRequest))
             assert len(coreReqs) == 2
             for coreReq in coreReqs:
                 assert coreReq.value == INF
-            ramReqs = list(filter(lambda r: r.rtype is Resource.Type.RAM,
+            ramReqs = list(filter(lambda r: r.rtype is RType.RAM,
                                   job.resourceRequest))
             assert len(ramReqs) == 1
             assert ramReqs[0].value == 1
@@ -33,12 +33,12 @@ class GeneratorsTests(SimulatorTests):
         jobs = gen.getJobs(1000)
         for job in jobs:
             assert job.operations > 0
-            coreReqs = list(filter(lambda r: r.rtype is Resource.Type.CPU_core,
+            coreReqs = list(filter(lambda r: r.rtype is RType.CPU_core,
                                    job.resourceRequest))
             assert 1 <= len(coreReqs) and len(coreReqs) <= 8
             for coreReq in coreReqs:
                 assert coreReq.value == INF
-            ramReqs = list(filter(lambda r: r.rtype is Resource.Type.RAM,
+            ramReqs = list(filter(lambda r: r.rtype is RType.RAM,
                                   job.resourceRequest))
             assert len(ramReqs) == 1
             assert 0 < ramReqs[0].value and ramReqs[0].value <= 16

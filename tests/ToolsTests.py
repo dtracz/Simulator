@@ -13,9 +13,9 @@ class ToolsTests(SimulatorTests):
 
     @staticmethod
     def getTask(length, noCores, ram, ownCores=True):
-        res = [ResourceRequest(Resource.Type.RAM, ram)]
+        res = [ResourceRequest(RType.RAM, ram)]
         for _ in range(noCores):
-            res += [ResourceRequest(Resource.Type.CPU_core, INF)]
+            res += [ResourceRequest(RType.CPU_core, INF)]
         job = Job(length, res, )
         vm = CreateVM.minimal([job], ownCores=ownCores)
         vm.scheduleJob(job)
@@ -120,11 +120,11 @@ class ToolsTests(SimulatorTests):
                     running.add(task)
 
         resources = {
-            Resource(Resource.Type.CPU_core, 1), # GHz
-            Resource(Resource.Type.CPU_core, 1), # GHz
-            Resource(Resource.Type.CPU_core, 1), # GHz
-            Resource(Resource.Type.CPU_core, 1), # GHz
-            Resource(Resource.Type.RAM, 16),     # GB
+            Resource(RType.CPU_core, 1), # GHz
+            Resource(RType.CPU_core, 1), # GHz
+            Resource(RType.CPU_core, 1), # GHz
+            Resource(RType.CPU_core, 1), # GHz
+            Resource(RType.RAM, 16),     # GB
         }
         m0 = Machine("m0", resources, lambda m: None, BinPackingScheduler)
         m0._vmScheduler._bins = [tb]
