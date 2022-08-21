@@ -37,13 +37,19 @@ class Resource:
             return self.value < other.value
 
 
-    def __init__(self, rtype, value):
+    def __init__(self, rtype, value, freq=None):
         self.rtype = rtype 
         self.maxValue = value
         self.tmpMaxValue = value
         self.value = value
         self._users = {}
-        #  self.vmsUsing = set()
+        if rtype is self.Type.CPU_core and freq is None:
+            freq = 1
+        if rtype is self.Type.RAM:
+            assert freq is None
+        if rtype is self.Type.GPU:
+            assert freq is not None
+        self.freq = freq
 
     def addUser(self, user):
         if type(user) not in self._users.keys():
@@ -95,7 +101,7 @@ class Resource:
                 raise RuntimeError(f"Requested {value} out of {self.value} avaliable")
             self.tmpMaxValue -= value
             self.value = self.tmpMaxValue / max(self.noDynamicUses, 1)
-            resource = Resource(self.rtype, value)
+            resource = Resource(self.rtype, value, self.freq)
         self.recalculateJobs()
         return resource
 

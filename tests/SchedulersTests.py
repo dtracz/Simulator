@@ -143,24 +143,24 @@ class SchedulersTests(SimulatorTests):
         resources = {
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1664*1050),             # MHz
+            Resource(RType.GPU, 1664, 1050),            # nCC,MHz
         }
         m0 = Machine("m0", resources,
             getJobScheduler=lambda m: JobSchedulerSimple(m, autofree=True))
 
         job0 = Job(500,
                    [ResourceRequest(RType.CPU_core, inf),
-                    ResourceRequest(RType.GPU, 1024*1050),
+                    ResourceRequest(RType.GPU, 1024),
                     ResourceRequest(RType.RAM, 6)],
                )
         job1 = Job(1000,
                    [ResourceRequest(RType.CPU_core, inf),
-                    ResourceRequest(RType.GPU, 1024*1050),
+                    ResourceRequest(RType.GPU, 1024),
                     ResourceRequest(RType.RAM, 6)],
                )
         job2 = Job(1000,
                    [ResourceRequest(RType.CPU_core, inf),
-                    ResourceRequest(RType.GPU, 512*1050),
+                    ResourceRequest(RType.GPU, 512),
                     ResourceRequest(RType.RAM, 6)],
                )
 
@@ -179,13 +179,13 @@ class SchedulersTests(SimulatorTests):
         resources0 = {
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1664*1050),             # MHz
+            Resource(RType.GPU, 1664, 1050),            # nCC,MHz
         }
         m0 = Machine("m0", resources0, lambda m: None, VMSchedulerSimple)
         resources1 = {
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1024*1050),             # MHz
+            Resource(RType.GPU, 1024, 1050),            # nCC,MHz
         }
         m1 = Machine("m1", resources1, lambda m: None, VMSchedulerSimple)
 
@@ -198,24 +198,24 @@ class SchedulersTests(SimulatorTests):
             resourceReq = {
                 ResourceRequest(RType.CPU_core, inf, shared=True),
                 ResourceRequest(RType.RAM, ram),
-                ResourceRequest(RType.GPU, gpu),
+                ResourceRequest(RType.GPU, gpu, 1050),
             }
             vm = VirtualMachine(f"vm{vm_id}", resourceReq,
                     lambda machine: JobSchedulerSimple(machine, autofree=True))
             jobs = [
                 Job(500,
                     [ResourceRequest(RType.CPU_core, inf),
-                     ResourceRequest(RType.GPU, 1024*1050),
+                     ResourceRequest(RType.GPU, 1024),
                      ResourceRequest(RType.RAM, 8)],
                 ),
                 Job(1000,
                     [ResourceRequest(RType.CPU_core, inf),
-                     ResourceRequest(RType.GPU, 1024*1050),
+                     ResourceRequest(RType.GPU, 1024),
                      ResourceRequest(RType.RAM, 6)],
                 ),
                 Job(1000,
                     [ResourceRequest(RType.CPU_core, inf),
-                     ResourceRequest(RType.GPU, 512*1050),
+                     ResourceRequest(RType.GPU, 512),
                      ResourceRequest(RType.RAM, 6)],
                 ),
             ]
@@ -223,10 +223,10 @@ class SchedulersTests(SimulatorTests):
                 vm.scheduleJob(jobs[i])
             return vm
 
-        infrastructure.scheduleVM(getVM(0, 8, 1024*1050,[0]))
-        infrastructure.scheduleVM(getVM(1, 8, 1024*1050,[1,2]))
-        infrastructure.scheduleVM(getVM(2, 16, 1664*1050,[0,1,2]))
-        infrastructure.scheduleVM(getVM(3, 12, 1664*1050,[1,2]))
+        infrastructure.scheduleVM(getVM(0, 8, 1024,[0]))
+        infrastructure.scheduleVM(getVM(1, 8, 1024,[1,2]))
+        infrastructure.scheduleVM(getVM(2, 16, 1664,[0,1,2]))
+        infrastructure.scheduleVM(getVM(3, 12, 1664,[1,2]))
 
         sim = Simulator.getInstance()
         sim.simulate()

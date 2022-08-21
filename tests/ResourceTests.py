@@ -110,24 +110,24 @@ class ResourceTests(SimulatorTests):
         resources = {
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1664*1050),             # MHz
+            Resource(RType.GPU, 1664, 1050),            # nCC,MHz
         }
         m0 = Machine("m0", resources)
 
         res0 = [
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      512*1050),  # MB
+            ResourceRequest(RType.GPU,      512),       # MHz
         ]
         res1 = [
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      1024*1050), # MB
+            ResourceRequest(RType.GPU,      1024),      # MHz
         ]
         res2 = [
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      512*1050),  # MB
+            ResourceRequest(RType.GPU,      512),       # MHz
         ]
         job0 = Job(200, res0)
         job1 = Job(300, res1)
