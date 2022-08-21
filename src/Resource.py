@@ -120,7 +120,7 @@ class Resource:
         for job in self.jobsUsing:
             if job.host is None:
                 continue
-            if job.operationsLeft < EPS:
+            if all([v < EPS for v in job.operationsLeft.values()]):
                 continue
             jobRecalculate = JobRecalculate(job, job.host)
             Simulator.getInstance().addEvent(now, jobRecalculate)
