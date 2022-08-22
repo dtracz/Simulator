@@ -232,3 +232,40 @@ class SchedulersTests(SimulatorTests):
         sim.simulate()
         assert sim.time == 500
 
+    def test_gpuLength_schedule(self):
+        inf = INF
+        resources = {
+            Resource(RType.CPU_core, 10),               # GHz
+            Resource(RType.CPU_core, 10),               # GHz
+            Resource(RType.RAM, 16),                    # GB
+            Resource(RType.GPU, 1664, 1000),            # nCC,MHz
+        }
+        m0 = Machine("m0", resources, JobSchedulerSimple)
+
+        res0 = [
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.RAM,      5),         # GB
+            ResourceRequest(RType.GPU,      1024),      # MHz
+        ]
+        res1 = [
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.RAM,      5),         # GB
+            ResourceRequest(RType.GPU,      1024),      # MHz
+        ]
+        job0 = Job({RType.CPU_core: 200, RType.GPU: 1024*1000*15}, res0)
+        job1 = Job({RType.CPU_core: 200, RType.GPU: 1024*1000*15}, res1)
+
+        m0.scheduleJob(job0)
+        m0.scheduleJob(job1)
+
+        sim = Simulator.getInstance()
+        inspector = EventInspector([
+            {'time': 0, 'what': NType.JobStart, 'job': job0},
+            {'time': 15, 'what': NType.JobFinish, 'job': job0},
+            {'time': 15, 'what': NType.JobStart, 'job': job1},
+            {'time': 35, 'what': NType.JobFinish, 'job': job1},
+        ])
+        sim.simulate()
+        inspector.verify()
+

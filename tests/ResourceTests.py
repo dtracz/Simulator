@@ -149,3 +149,41 @@ class ResourceTests(SimulatorTests):
         sim.simulate()
         inspector.verify()
 
+
+    def test_gpuLength(self):
+        inf = INF
+        resources = {
+            Resource(RType.CPU_core, 10),               # GHz
+            Resource(RType.CPU_core, 10),               # GHz
+            Resource(RType.RAM, 16),                    # GB
+            Resource(RType.GPU, 1664, 1000),            # nCC,MHz
+        }
+        m0 = Machine("m0", resources)
+
+        res0 = [
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.RAM,      5),         # GB
+            ResourceRequest(RType.GPU,      1024),      # MHz
+        ]
+        res1 = [
+            ResourceRequest(RType.CPU_core, inf),       # GHz
+            ResourceRequest(RType.RAM,      5),         # GB
+            ResourceRequest(RType.GPU,      1024),      # MHz
+        ]
+        job0 = Job({RType.CPU_core: 200, RType.GPU: 1024*1000*15}, res0)
+        job1 = Job({RType.CPU_core: 200, RType.GPU: 1024*1000*15}, res1)
+
+        sim = Simulator.getInstance()
+        sim.addEvent(0, JobStart(job0, m0))
+        sim.addEvent(15, JobStart(job1, m0))
+
+        inspector = EventInspector([
+            {'time': 0, 'what': NType.JobStart, 'job': job0},
+            {'time': 15, 'what': NType.JobFinish, 'job': job0},
+            {'time': 15, 'what': NType.JobStart, 'job': job1},
+            {'time': 35, 'what': NType.JobFinish, 'job': job1},
+        ])
+        sim.simulate()
+        inspector.verify()
+

@@ -51,6 +51,10 @@ class JobStart(Event):
 
 
 class TryJobStart(JobStart):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = f"JobTryStart_{self.job.name}"
+
     def proceed(self):
         isAllocated = self.host.allocate(self.job, noexcept=True)
         self._f(isAllocated)

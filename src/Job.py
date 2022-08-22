@@ -29,7 +29,7 @@ class Job(ResourcesHolder):
         totalFrequency = dict.fromkeys(self.operationsLeft.keys(), 0)
         for resource in self.obtainedRes:
             if resource.rtype in totalFrequency.keys():
-                totalFrequency[resource.rtype] += resource.value
+                totalFrequency[resource.rtype] += resource.value*resource.freq
         return totalFrequency
 
     def calculateExecTimes(self):
