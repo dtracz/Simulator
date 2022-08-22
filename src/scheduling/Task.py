@@ -8,7 +8,13 @@ from Job import *
 
 
 class Task:
-    def __init__(self, vm):
+    '''
+    Assumptions:
+    1. All GPUs of the host machine are the same.
+    2. All CPU cores of the host machine are the same.
+    3. Tasks fully utilizes resource they requested.
+    '''
+    def __init__(self, vm, host_freqs={RType.CPU_core: 1}, gpus_nCC=None):
         self.vm = vm
         assert vm._jobScheduler is not None
         assert len(vm._jobScheduler._jobQueue) == 1
@@ -22,6 +28,16 @@ class Task:
                             vm.maxResources))
         assert len(cores) > 0
         self.dims[cores[0][0]] = len(cores)
+        gpus = list(filter(lambda rv: rv[0] == RType.GPU,
+                           vm.maxResources))
+        if len(gpus) > 0:
+            if gpus_nCC is None:
+                raise KeyError(f"Number of Cuda Cores not provided for task")
+            if RType.GPU not in host_freqs.keys():
+                raise KeyError(f"GPU frequency not provided for task")
+            self.dims[gpus[0][0]] = len(gpus)
+            self.gpus_nCC = gpus_nCC
+        self.host_freqs = host_freqs
         self.startpoint = None
 
     def reduceCores(self, n=-1):
@@ -43,9 +59,13 @@ class Task:
 
     @property
     def length(self):
-        ops = self.job.operations
-        noCores = self.dims[RType.CPU_core]
-        return ops / noCores
+        opss = []
+        for rtype, ops in self.job.operations.items():
+            noCores = self.dims[rtype] * self.host_freqs[rtype]
+            if rtype is RType.GPU:
+                noCores *= self.gpus_nCC
+            opss += [ops / noCores]
+        return max(opss)
 
     @property
     def endpoint(self):
