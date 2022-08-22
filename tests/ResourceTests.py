@@ -110,24 +110,24 @@ class ResourceTests(SimulatorTests):
         resources = {
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1664, 1050),            # nCC,MHz
+            Resource(RType.GPU, 1664, 1.05),            # nCC,GHz
         }
         m0 = Machine("m0", resources)
 
         res0 = [
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      512),       # MHz
+            ResourceRequest(RType.GPU,      512),       # nCC
         ]
         res1 = [
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      1024),      # MHz
+            ResourceRequest(RType.GPU,      1024),      # nCC
         ]
         res2 = [
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      512),       # MHz
+            ResourceRequest(RType.GPU,      512),       # nCC
         ]
         job0 = Job(200, res0)
         job1 = Job(300, res1)
@@ -156,7 +156,7 @@ class ResourceTests(SimulatorTests):
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1664, 1000),            # nCC,MHz
+            Resource(RType.GPU, 1664, 1),               # nCC,GHz
         }
         m0 = Machine("m0", resources)
 
@@ -164,15 +164,15 @@ class ResourceTests(SimulatorTests):
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      1024),      # MHz
+            ResourceRequest(RType.GPU,      1024),      # nCC
         ]
         res1 = [
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      1024),      # MHz
+            ResourceRequest(RType.GPU,      1024),      # nCC
         ]
-        job0 = Job({RType.CPU_core: 200, RType.GPU: 1024*1000*15}, res0)
-        job1 = Job({RType.CPU_core: 200, RType.GPU: 1024*1000*15}, res1)
+        job0 = Job({RType.CPU_core: 200, RType.GPU: 1024*15}, res0)
+        job1 = Job({RType.CPU_core: 200, RType.GPU: 1024*15}, res1)
 
         sim = Simulator.getInstance()
         sim.addEvent(0, JobStart(job0, m0))

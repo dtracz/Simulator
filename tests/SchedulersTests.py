@@ -143,7 +143,7 @@ class SchedulersTests(SimulatorTests):
         resources = {
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1664, 1050),            # nCC,MHz
+            Resource(RType.GPU, 1664, 1.05),            # nCC,GHz
         }
         m0 = Machine("m0", resources,
             getJobScheduler=lambda m: JobSchedulerSimple(m, autofree=True))
@@ -179,13 +179,13 @@ class SchedulersTests(SimulatorTests):
         resources0 = {
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1664, 1050),            # nCC,MHz
+            Resource(RType.GPU, 1664, 1.05),            # nCC,GHz
         }
         m0 = Machine("m0", resources0, lambda m: None, VMSchedulerSimple)
         resources1 = {
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1024, 1050),            # nCC,MHz
+            Resource(RType.GPU, 1024, 1.05),            # nCC,GHz
         }
         m1 = Machine("m1", resources1, lambda m: None, VMSchedulerSimple)
 
@@ -198,7 +198,7 @@ class SchedulersTests(SimulatorTests):
             resourceReq = {
                 ResourceRequest(RType.CPU_core, inf, shared=True),
                 ResourceRequest(RType.RAM, ram),
-                ResourceRequest(RType.GPU, gpu, 1050),
+                ResourceRequest(RType.GPU, gpu),
             }
             vm = VirtualMachine(f"vm{vm_id}", resourceReq,
                     lambda machine: JobSchedulerSimple(machine, autofree=True))
@@ -238,7 +238,7 @@ class SchedulersTests(SimulatorTests):
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.CPU_core, 10),               # GHz
             Resource(RType.RAM, 16),                    # GB
-            Resource(RType.GPU, 1664, 1000),            # nCC,MHz
+            Resource(RType.GPU, 1664, 1),               # nCC,GHz
         }
         m0 = Machine("m0", resources, JobSchedulerSimple)
 
@@ -246,15 +246,15 @@ class SchedulersTests(SimulatorTests):
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      1024),      # MHz
+            ResourceRequest(RType.GPU,      1024),      # nCC
         ]
         res1 = [
             ResourceRequest(RType.CPU_core, inf),       # GHz
             ResourceRequest(RType.RAM,      5),         # GB
-            ResourceRequest(RType.GPU,      1024),      # MHz
+            ResourceRequest(RType.GPU,      1024),      # nCC
         ]
-        job0 = Job({RType.CPU_core: 200, RType.GPU: 1024*1000*15}, res0)
-        job1 = Job({RType.CPU_core: 200, RType.GPU: 1024*1000*15}, res1)
+        job0 = Job({RType.CPU_core: 200, RType.GPU: 1024*15}, res0)
+        job1 = Job({RType.CPU_core: 200, RType.GPU: 1024*15}, res1)
 
         m0.scheduleJob(job0)
         m0.scheduleJob(job1)
