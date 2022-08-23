@@ -12,6 +12,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--speed', dest='CPU_SPEED', default=3.6, type=float)
 parser.add_argument('--cores', dest='NO_CORES', default=4, type=int)
 parser.add_argument('--ram', dest='RAM_SIZE', default=16, type=float)
+parser.add_argument('--gpus', dest='NO_GPUS', default=4, type=int)
+parser.add_argument('--gpu-speed', dest='GPU_SPEED', default=1.05, type=float)
+parser.add_argument('--nCC', dest='N_CC', default=1024, type=int,
+                    help='number of cuda cores per GPU')
 parser.add_argument('--jobs', dest='NO_JOBS', default=100, type=int)
 parser.add_argument('--dist-param', dest='TH_BIN_DIST_PARAM', default=0.1, type=float)
 parser.add_argument('--max-threads', dest='MAX_THREADS', default=-1, type=int)
@@ -53,6 +57,8 @@ Scheduler = SCHEDULERS[args.SCHEDULER]
 resources = { Resource(RType.RAM, args.RAM_SIZE) }
 for _ in range(args.NO_CORES):
     resources.add(Resource(RType.CPU_core, args.CPU_SPEED))
+for _ in range(args.NO_GPUS):
+    resources.add(Resource(RType.GPU, args.N_CC, args.GPU_SPEED))
 machine = Machine("m0", resources, lambda m: None, Scheduler)
 
 gen = RandomJobGenerator(
@@ -64,24 +70,24 @@ gen = RandomJobGenerator(
 )
 jobs = gen.getJobs(args.NO_JOBS)
 
-totalOps = 0
-theoreticalTotalTime = 0
+seqTime = 0
+totalOps = {}
 for job in jobs:
     ops = job.operations
-    noThreads = len(list(filter(lambda r: r.rtype == RType.CPU_core,
-                                job.resourceRequest)))
-    totalOps += ops
-    theoreticalTotalTime += ops / (min(noThreads, args.NO_CORES) * args.CPU_SPEED)
     vm = CreateVM.minimal([job], ownCores=True)
     vm.scheduleJob(job)
-    machine.scheduleVM(vm)
+    theoreticalTime = machine.scheduleVM(vm)
+    seqTime += theoreticalTime
+    totalOps = dictPlus(totalOps, job.operations)
 
 sim = Simulator.getInstance()
 sim.simulate()
 
 assert machine._vmScheduler.vmsLeft == 0
 
+thCPUBestTime = totalOps[RType.CPU_core] / (args.NO_CORES*args.CPU_SPEED)
+thGPUBestTime = totalOps[RType.GPU] / (args.NO_GPUS*args.N_CC*args.GPU_SPEED)
 print("simulation time:               ", sim.time)
-print("sequence execution time:       ", theoreticalTotalTime)
-print("theoretical best possible time:", totalOps / (args.CPU_SPEED * args.NO_CORES))
+print("sequence execution time:       ", seqTime)
+print("theoretical best possible time:", max(thCPUBestTime, thGPUBestTime))
 

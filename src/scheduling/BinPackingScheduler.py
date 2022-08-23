@@ -100,6 +100,7 @@ class BinPackingScheduler(VMSchedulerSimple):
             raise Exception(f"{vm.name} can never be allocated"
                             f" on {self._machine.name}")
         task = Task(vm, host_freqs=self._host_freqs, gpus_nCC=self._gpu_min_nCC)
+        length = task.length
         bestBucket = None
         bestScore = {}
         for key in self._maxDims.keys():
@@ -117,4 +118,5 @@ class BinPackingScheduler(VMSchedulerSimple):
         added = bestBucket.add(task)
         if not added:
             raise Exception(f"{vm.name} cannot be fit into any bucket")
+        return task.length
 
