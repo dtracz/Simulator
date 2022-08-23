@@ -13,16 +13,17 @@ class GeneratorsTests(SimulatorTests):
         gen = RandomJobGenerator(operations = lambda s: [10 for _ in range(s)],
                                  noCores = lambda s: [2 for _ in range(s)],
                                  ramSize = lambda s: [1 for _ in range(s)],
+                                 noGPUs=lambda s: s*[0]
                                 )
         jobs = gen.getJobs(10)
         for job in jobs:
-            assert job.operations == 10
-            coreReqs = list(filter(lambda r: r.rtype is Resource.Type.CPU_core,
+            assert job.operations[RType.CPU_core] == 10
+            coreReqs = list(filter(lambda r: r.rtype is RType.CPU_core,
                                    job.resourceRequest))
             assert len(coreReqs) == 2
             for coreReq in coreReqs:
                 assert coreReq.value == INF
-            ramReqs = list(filter(lambda r: r.rtype is Resource.Type.RAM,
+            ramReqs = list(filter(lambda r: r.rtype is RType.RAM,
                                   job.resourceRequest))
             assert len(ramReqs) == 1
             assert ramReqs[0].value == 1
@@ -32,13 +33,13 @@ class GeneratorsTests(SimulatorTests):
         gen = RandomJobGenerator()
         jobs = gen.getJobs(1000)
         for job in jobs:
-            assert job.operations > 0
-            coreReqs = list(filter(lambda r: r.rtype is Resource.Type.CPU_core,
+            assert all(n > 0 for n in job.operations.values())
+            coreReqs = list(filter(lambda r: r.rtype is RType.CPU_core,
                                    job.resourceRequest))
             assert 1 <= len(coreReqs) and len(coreReqs) <= 8
             for coreReq in coreReqs:
                 assert coreReq.value == INF
-            ramReqs = list(filter(lambda r: r.rtype is Resource.Type.RAM,
+            ramReqs = list(filter(lambda r: r.rtype is RType.RAM,
                                   job.resourceRequest))
             assert len(ramReqs) == 1
             assert 0 < ramReqs[0].value and ramReqs[0].value <= 16
@@ -46,7 +47,7 @@ class GeneratorsTests(SimulatorTests):
 
     def test_vmWrapping(self):
         gen = RandomJobGenerator()
-        jobs = list(gen.getJobs(20))
+        jobs = list(gen.getJobs(1000))
         vm = CreateVM.minimal(jobs)
         for job in jobs:
             assert vm.isFittable(job)

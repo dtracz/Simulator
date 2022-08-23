@@ -23,14 +23,25 @@ class BinPackingScheduler(VMSchedulerSimple):
         super().__init__(machine)
         self.BinClass = BinClass
         self._maxDims = {}
-        rams = list(filter(lambda r: r.rtype == RType.RAM,
-                           machine.resources))
-        assert len(rams) == 1
-        self._maxDims[rams[0].rtype] = rams[0].value
-        cores = list(filter(lambda r: r.rtype == RType.CPU_core,
-                            machine.resources))
-        assert len(cores) > 0
-        self._maxDims[cores[0].rtype] = len(cores)
+        for res in machine.resources:
+            if res.rtype not in self._maxDims.keys():
+                self._maxDims[res.rtype] = []
+            self._maxDims[res.rtype] += [res]
+        self._host_freqs = {}
+        for rtype, res in self._maxDims.items():
+            if rtype is RType.RAM:
+                assert len(res) == 1
+                self._maxDims[rtype] = res[0].maxValue
+            if rtype is RType.CPU_core:
+                assert len(res) > 0
+                self._maxDims[rtype] = len(res)
+                self._host_freqs[rtype] = min(res, key=lambda r: r.maxValue).maxValue
+            if rtype is RType.GPU:
+                self._maxDims[rtype] = len(res)
+                self._host_freqs[rtype] = min(res, key=lambda r: r.freq).freq
+        gpus = list(filter(lambda rv: rv[0] == RType.GPU,
+                           self._machine.maxResources))
+        self._gpu_min_nCC = min(list(zip(*gpus))[1]) if len(gpus) > 0 else None
         self._bins = []
         self._currentBin = None
         self._listener = EventInspector() if awaitBins else None
@@ -88,7 +99,8 @@ class BinPackingScheduler(VMSchedulerSimple):
         if not self._machine.isFittable(vm):
             raise Exception(f"{vm.name} can never be allocated"
                             f" on {self._machine.name}")
-        task = Task(vm)
+        task = Task(vm, host_freqs=self._host_freqs, gpus_nCC=self._gpu_min_nCC)
+        length = task.length
         bestBucket = None
         bestScore = {}
         for key in self._maxDims.keys():
@@ -106,4 +118,5 @@ class BinPackingScheduler(VMSchedulerSimple):
         added = bestBucket.add(task)
         if not added:
             raise Exception(f"{vm.name} cannot be fit into any bucket")
+        return task.length
 

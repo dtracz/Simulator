@@ -36,7 +36,8 @@ class VMSchedulerSimple(NotificationListener):
             self.popFront()
             notif = Notification(NType.VMStart, host=self._machine, vm=vm)
             Simulator.getInstance().emit(notif)
-        Simulator.getInstance().addEvent(NOW(), Event(f, priority=10))
+        event = Event(f, name=f"VMTryStart_{vm.name}", priority=10)
+        Simulator.getInstance().addEvent(NOW(), event)
         self._suspended = True
         return True
 

@@ -11,14 +11,14 @@ class SimpleTests(SimulatorTests):
  
     def test_1job(self):
         resources = {
-            Resource(Resource.Type.CPU_core, 10), # GHz
-            Resource(Resource.Type.RAM, 16),    # GB
+            Resource(RType.CPU_core, 10), # GHz
+            Resource(RType.RAM, 16),    # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = [
-            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
-            ResourceRequest(Resource.Type.RAM,      5),  # GB
+            ResourceRequest(RType.CPU_core, 10), # GHz
+            ResourceRequest(RType.RAM,      5),  # GB
         ]
         job0 = Job(100, res0)
 
@@ -31,19 +31,19 @@ class SimpleTests(SimulatorTests):
 
     def test_2jobs2cores(self):
         resources = {
-            Resource(Resource.Type.CPU_core, 10), # GHz
-            Resource(Resource.Type.CPU_core, 10), # GHz
-            Resource(Resource.Type.RAM, 16),      # GB
+            Resource(RType.CPU_core, 10), # GHz
+            Resource(RType.CPU_core, 10), # GHz
+            Resource(RType.RAM, 16),      # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = [
-            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
-            ResourceRequest(Resource.Type.RAM,      5),  # GB
+            ResourceRequest(RType.CPU_core, 10), # GHz
+            ResourceRequest(RType.RAM,      5),  # GB
         ]
         res1 = [
-            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
-            ResourceRequest(Resource.Type.RAM,      8),  # GB
+            ResourceRequest(RType.CPU_core, 10), # GHz
+            ResourceRequest(RType.RAM,      8),  # GB
         ]
         job0 = Job(650, res0)
         job1 = Job(450, res1)
@@ -57,16 +57,16 @@ class SimpleTests(SimulatorTests):
 
     def test_1job2cores(self):
         resources = {
-            Resource(Resource.Type.CPU_core, 10), # GHz
-            Resource(Resource.Type.CPU_core, 5),  # GHz
-            Resource(Resource.Type.RAM, 16),      # GB
+            Resource(RType.CPU_core, 10), # GHz
+            Resource(RType.CPU_core, 5),  # GHz
+            Resource(RType.RAM, 16),      # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = [
-            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
-            ResourceRequest(Resource.Type.CPU_core, 5),  # GHz
-            ResourceRequest(Resource.Type.RAM,      5),  # GB
+            ResourceRequest(RType.CPU_core, 10), # GHz
+            ResourceRequest(RType.CPU_core, 5),  # GHz
+            ResourceRequest(RType.RAM,      5),  # GB
         ]
         job0 = Job(150, res0)
 
@@ -79,19 +79,19 @@ class SimpleTests(SimulatorTests):
 
     def test_ramFailure(self):
         resources = {
-            Resource(Resource.Type.CPU_core, 10), # GHz
-            Resource(Resource.Type.CPU_core, 10), # GHz
-            Resource(Resource.Type.RAM, 16),      # GB
+            Resource(RType.CPU_core, 10), # GHz
+            Resource(RType.CPU_core, 10), # GHz
+            Resource(RType.RAM, 16),      # GB
         }
         m0 = Machine("m0", resources)
 
         res0 = [
-            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
-            ResourceRequest(Resource.Type.RAM,      10),  # GB
+            ResourceRequest(RType.CPU_core, 10), # GHz
+            ResourceRequest(RType.RAM,      10),  # GB
         ]
         res1 = [
-            ResourceRequest(Resource.Type.CPU_core, 10), # GHz
-            ResourceRequest(Resource.Type.RAM,      8),  # GB
+            ResourceRequest(RType.CPU_core, 10), # GHz
+            ResourceRequest(RType.RAM,      8),  # GB
         ]
         job0 = Job(650, res0)
         job1 = Job(450, res1)
@@ -112,20 +112,20 @@ class SimpleTests(SimulatorTests):
 
     def test_3coresJobOn1coresMachine(self):
         resources = {
-            Resource(Resource.Type.CPU_core, 10), # GHz
-            Resource(Resource.Type.RAM, 16),      # GB
+            Resource(RType.CPU_core, 10), # GHz
+            Resource(RType.RAM, 16),      # GB
         }
         m0 = Machine("m0", resources)
         req0 = [
-            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
-            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
-            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
-            ResourceRequest(Resource.Type.RAM,      5),   # GB
+            ResourceRequest(RType.CPU_core, INF), # GHz
+            ResourceRequest(RType.CPU_core, INF), # GHz
+            ResourceRequest(RType.CPU_core, INF), # GHz
+            ResourceRequest(RType.RAM,      5),   # GB
         ]
         job0 = Job(75, req0)
         req1 = [
-            ResourceRequest(Resource.Type.CPU_core, INF), # GHz
-            ResourceRequest(Resource.Type.RAM,      5),   # GB
+            ResourceRequest(RType.CPU_core, INF), # GHz
+            ResourceRequest(RType.RAM,      5),   # GB
         ]
         job1 = Job(25+20, req1)
 

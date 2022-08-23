@@ -16,6 +16,7 @@ class SimulatorTests(TestCase):
         assert sim.time == 0
         assert len(sim._eventQueue._todo) == 0
         assert len(sim._eventQueue._done) == 0
+        assert len(sim._listeners) == 0
 
     def tearDown(self):
         sim = Simulator.getInstance()

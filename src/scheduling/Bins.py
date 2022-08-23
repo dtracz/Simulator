@@ -32,10 +32,9 @@ class SimpleBin:
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
-        for rtype, limit in self.maxDims.items():
-            assert rtype in task.dims
+        for rtype, value in task.dims.items():
             assert rtype in self.maxDims
-            if task.dims[rtype] + self.currentDims[rtype] > limit:
+            if value + self.currentDims[rtype] > self.maxDims[rtype]:
                 return False
         self._tasks.add(task)
         return True
@@ -54,7 +53,8 @@ class SimpleBin:
         for rtype in rtypes:
             usage = 0
             for task in tasks:
-                usage += task.length * task.dims[rtype]
+                task_usage = task.dims.get(rtype, 0)
+                usage += task.length * task_usage
             eff[rtype] = usage / (self.maxDims[rtype] * length)
         return eff
 
@@ -117,12 +117,11 @@ class ReductiveBin(SimpleBin):
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
-        for rtype, limit in self.maxDims.items():
+        for rtype, value in task.dims.items():
             if rtype == RType.CPU_core:
                 continue
-            assert rtype in task.dims
             assert rtype in self.maxDims
-            if task.dims[rtype] + self.currentDims[rtype] > limit:
+            if value + self.currentDims[rtype] > self.maxDims[rtype]:
                 return False
         self._tasks.add(task)
         if self._refitJobs():
@@ -163,7 +162,7 @@ class TimelineBin(SimpleBin):
             occupied = Task.sum(tasksAt)
             allOK = True
             for rtype, limit in maxDims.items():
-                allOK *= occupied.get(rtype, 0) + task.dims[rtype] \
+                allOK *= occupied.get(rtype, 0) + task.dims.get(rtype, 0) \
                       <= maxDims[rtype]
             if allOK:
                 if lastOK is None:
@@ -179,8 +178,9 @@ class TimelineBin(SimpleBin):
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
-        for rtype, limit in self.maxDims.items():
-            if task.dims[rtype] > limit:
+        for rtype, value in task.dims.items():
+            assert rtype in self.maxDims
+            if value > self.maxDims[rtype]:
                 return False
         return self.addToTimeline(self._tasks, self.maxDims, task)
 
@@ -210,8 +210,9 @@ class OrderedTimelineBin(TimelineBin):
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
-        for rtype, limit in self.maxDims.items():
-            if task.dims[rtype] > limit:
+        for rtype, value in task.dims.items():
+            assert rtype in self.maxDims
+            if value > self.maxDims[rtype]:
                 return False
         prevTl = self._prevTl
         self._prevTl = self._tasks.copy()

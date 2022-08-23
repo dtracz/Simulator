@@ -7,21 +7,11 @@ class Infrastructure:
     """
     Infrastructure represents all hardware avaliable to run jobs.
     """
-    __self = None
 
     def __init__(self, machines, getVMPlacementPolicy):
-        if Infrastructure.__self != None:
-            raise Exception("Creating another instance of Infrastructure is forbidden")
         self.machines = set(machines)
         self._knownVMs = set()
         self._vmPlacementPolicy = getVMPlacementPolicy(self.machines)
-        Infrastructure.__self = self
-
-    @staticmethod
-    def getInstance(*args, **kwargs):
-        if Infrastructure.__self == None:
-            Infrastructure(*args, **kwargs)
-        return Infrastructure.__self;
 
     def scheduleVM(self, vm):
         self._vmPlacementPolicy.placeVM(vm)
@@ -184,12 +174,12 @@ class Machine:
     def scheduleJob(self, job):
         if self._jobScheduler is None:
             raise Exception(f"Machine {self.name} has no job scheduler")
-        self._jobScheduler.schedule(job)
+        return self._jobScheduler.schedule(job)
 
     def scheduleVM(self, job):
         if self._vmScheduler is None:
             raise Exception(f"Machine {self.name} has no VM scheduler")
-        self._vmScheduler.schedule(job)
+        return self._vmScheduler.schedule(job)
 
     def __lt__(self, other):
         return self._index < other._index

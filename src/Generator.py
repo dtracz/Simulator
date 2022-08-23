@@ -10,10 +10,12 @@ from scheduling.BaseSchedulers import *
 class JobGenerator(metaclass=ABCMeta):
 
     @staticmethod
-    def createJob(operations, noCores, ramSize, machine=None):
+    def createJob(operations, noCores, ramSize, gpus, machine=None):
         req = [ResourceRequest(RType.RAM, ramSize)]
         for _ in range(noCores):
             req += [ResourceRequest(RType.CPU_core, INF)]
+        for nCC in gpus:
+            req += [ResourceRequest(RType.GPU, nCC, shared=False)]
         return Job(operations, req, machine)
 
     @abstractmethod
@@ -26,17 +28,28 @@ class RandomJobGenerator(JobGenerator):
     def __init__(self,
                  operations=lambda s: abs(random.normal(100, 50, s)),
                  noCores=lambda s: 1+random.binomial(7, 0.08, s),
-                 ramSize=lambda s: random.uniform(0, 16, s)):
+                 ramSize=lambda s: random.uniform(0, 16, s),
+                 noGPUs=lambda s: random.binomial(4, 0.05/7, s),
+                 defaultNCC=INF):
         self._operations = operations
         self._noCores = noCores
         self._ramSize = ramSize
+        self._noGPUs = noGPUs
+        self._nCC = defaultNCC
 
     def getJobs(self, n=1, machine=None):
-        operations = self._operations(n)
+        operations = list(self._operations(n))
         noCores = self._noCores(n)
         ramSize = self._ramSize(n)
+        noGPUs = self._noGPUs(n)
         for i in range(n):
-            job = self.createJob(operations[i], noCores[i], ramSize[i], machine)
+            if noGPUs[i] > 0:
+                operations[i] = {
+                    RType.CPU_core: operations[i] / 10,
+                    RType.GPU: operations[i] * 30,
+                }
+            job = self.createJob(operations[i], noCores[i], ramSize[i],
+                                 noGPUs[i]*[self._nCC], machine)
             yield job
             
 
@@ -96,6 +109,7 @@ class CreateVM:
         name = "vm_for"
         noCores = 0
         ramSize = 0
+        gpus = []
         for job in jobs:
             name += f"_{job.name}"
             currentNoCores = 0
@@ -107,10 +121,18 @@ class CreateVM:
                     currentRamSize += req.value
             noCores = max(noCores, currentNoCores)
             ramSize = max(ramSize, currentRamSize)
+            currentGPUs = list(filter(lambda r: r.rtype == RType.GPU,
+                                      job.resourceRequest))
+            for i in range(min(len(gpus), len(currentGPUs))):
+                gpus[i].value = max(gpus[i].value, currentGPUs[i].value)
+            gpus += currentGPUs[len(gpus):]
         noCores = min(noCores, coreLimit)
         req = [ResourceRequest(RType.RAM, ramSize)]
         for _ in range(noCores):
             req += [ResourceRequest(RType.CPU_core, INF, shared=not ownCores)]
+        for gpu_req in gpus:
+            gpu_req.shared = False
+        req += gpus
         vm = VirtualMachine(name, req, scheduler)
         return vm
 
