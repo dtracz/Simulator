@@ -8,6 +8,23 @@ from scheduling.BinPackingScheduler import *
 from Generator import *
 
 
+#---FUNCIONS--------------------------------------------------------------------
+
+def getJobTime(job):
+    ops = job.operations
+    noCPU_threads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
+                                    job.resourceRequest)))
+    cpu_cores = min(noCPU_threads, args.NO_CORES)
+    cpuTime = job.operations.get(RType.CPU_core, 0) / (cpu_cores * args.CPU_SPEED + 1e-8)
+    noGPUs = len(list(filter(lambda r: r.rtype == Resource.Type.GPU,
+                                    job.resourceRequest)))
+    gpu_cores = min(noGPUs, args.NO_GPUS) * args.N_CC
+    gpuTime = job.operations.get(RType.GPU, 0) / (gpu_cores * args.GPU_SPEED + 1e-8)
+    return max(cpuTime, gpuTime)
+
+
+#---ARGUMENT-PARSING------------------------------------------------------------
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--speed', dest='CPU_SPEED', default=3.6, type=float)
 parser.add_argument('--cores', dest='NO_CORES', default=4, type=int)
@@ -53,6 +70,7 @@ SCHEDULERS = {
 Scheduler = SCHEDULERS[args.SCHEDULER]
 
 
+#---MAIN------------------------------------------------------------------------
 
 resources = { Resource(RType.RAM, args.RAM_SIZE) }
 for _ in range(args.NO_CORES):
@@ -73,20 +91,19 @@ jobs = gen.getJobs(args.NO_JOBS)
 seqTime = 0
 totalOps = {}
 for job in jobs:
-    ops = job.operations
+    seqTime += getJobTime(job)
+    totalOps = dictPlus(totalOps, job.operations)
     vm = CreateVM.minimal([job], ownCores=True)
     vm.scheduleJob(job)
-    theoreticalTime = machine.scheduleVM(vm)
-    seqTime += theoreticalTime
-    totalOps = dictPlus(totalOps, job.operations)
+    machine.scheduleVM(vm)
 
 sim = Simulator.getInstance()
 sim.simulate()
 
 assert machine._vmScheduler.noVMsLeft == 0
 
-thCPUBestTime = totalOps[RType.CPU_core] / (args.NO_CORES*args.CPU_SPEED)
-thGPUBestTime = totalOps[RType.GPU] / (args.NO_GPUS*args.N_CC*args.GPU_SPEED)
+thCPUBestTime = totalOps.get(RType.CPU_core, 0) / (args.NO_CORES * args.CPU_SPEED)
+thGPUBestTime = totalOps.get(RType.GPU, 0) / (args.NO_GPUS * args.N_CC * args.GPU_SPEED)
 print("simulation time:               ", sim.time)
 print("sequence execution time:       ", seqTime)
 print("theoretical best possible time:", max(thCPUBestTime, thGPUBestTime))

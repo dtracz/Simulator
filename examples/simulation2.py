@@ -10,7 +10,9 @@ from scheduling.Models import *
 from Generator import *
 
 
+
 parser = argparse.ArgumentParser()
+parser.add_argument('--speed', dest='CPU_SPEED', default=3.6, type=float)
 parser.add_argument('--jobs', dest='NO_JOBS', default=100, type=int)
 parser.add_argument('--max-threads', dest='MAX_THREADS', default=-1, type=int)
 parser.add_argument('--dist-param', dest='TH_BIN_DIST_PARAM', default=0.1, type=float)
@@ -75,16 +77,15 @@ def getMachine(ram, cores, Scheduler):
     return machine
 
 
-CPU_SPEED = 3.6 # GHz
 infrastructure = Infrastructure(
     [
-        getMachine(32, 8*[CPU_SPEED], VMScheduler),
-        getMachine(16, 4*[CPU_SPEED], VMScheduler),
-        getMachine(16, 4*[CPU_SPEED], VMScheduler),
-        getMachine(8, 4*[CPU_SPEED], VMScheduler),
-        getMachine(8, 4*[CPU_SPEED], VMScheduler),
-        getMachine(8, 4*[CPU_SPEED], VMScheduler),
-        getMachine(8, 4*[CPU_SPEED], VMScheduler),
+        getMachine(32, 8*[args.CPU_SPEED], VMScheduler),
+        getMachine(16, 4*[args.CPU_SPEED], VMScheduler),
+        getMachine(16, 4*[args.CPU_SPEED], VMScheduler),
+        getMachine(8, 4*[args.CPU_SPEED], VMScheduler),
+        getMachine(8, 4*[args.CPU_SPEED], VMScheduler),
+        getMachine(8, 4*[args.CPU_SPEED], VMScheduler),
+        getMachine(8, 4*[args.CPU_SPEED], VMScheduler),
     ],
     VMPlacementPolicy,
 )
@@ -101,14 +102,25 @@ gen = RandomJobGenerator(
 )
 jobs = gen.getJobs(args.NO_JOBS)
 
-totalOps = 0
-theoreticalTotalTime = 0
+def getJobTime(job):
+    ops = job.operations
+    noCPU_threads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
+                                    job.resourceRequest)))
+    cpu_cores = min(noCPU_threads, max_NO_CORES)
+    cpuTime = job.operations.get(RType.CPU_core, 0) / (cpu_cores * args.CPU_SPEED + 1e-8)
+    #  noGPUs = len(list(filter(lambda r: r.rtype == Resource.Type.GPU,
+    #                                  job.resourceRequest)))
+    #  gpu_cores = min(noGPUs, args.NO_GPUS) * args.N_CC
+    #  gpuTime = job.operations.get(RType.GPU, 0) / (gpu_cores * args.GPU_SPEED + 1e-8)
+    #  return max(cpuTime, gpuTime)
+    return cpuTime
+
+
+seqTime = 0
+totalOps = {}
 for job in jobs:
-    ops = job.operations[RType.CPU_core]
-    noThreads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
-                                job.resourceRequest)))
-    totalOps += ops
-    theoreticalTotalTime += ops / (min(noThreads, max_NO_CORES) * CPU_SPEED)
+    seqTime += getJobTime(job)
+    totalOps = dictPlus(totalOps, job.operations)
     vm = CreateVM.minimal([job], ownCores=True)
     vm.scheduleJob(job)
     infrastructure.scheduleVM(vm)
@@ -119,7 +131,8 @@ sim.simulate()
 for machine in infrastructure.machines:
     assert machine._vmScheduler.noVMsLeft == 0
 
+thCPUBestTime = totalOps.get(RType.CPU_core, 0) / (total_NO_CORES * args.CPU_SPEED)
 print("simulation time:               ", sim.time)
-print("sequence execution time:       ", theoreticalTotalTime)
-print("theoretical best possible time:", totalOps / (CPU_SPEED * total_NO_CORES))
+print("sequence execution time:       ", seqTime)
+print("theoretical best possible time:", thCPUBestTime)
 

@@ -177,12 +177,12 @@ class Machine:
     def scheduleJob(self, job):
         if self._jobScheduler is None:
             raise Exception(f"Machine {self.name} has no job scheduler")
-        return self._jobScheduler.schedule(job)
+        self._jobScheduler.schedule(job)
 
     def scheduleVM(self, job):
         if self._vmScheduler is None:
             raise Exception(f"Machine {self.name} has no VM scheduler")
-        return self._vmScheduler.schedule(job)
+        self._vmScheduler.schedule(job)
 
     def __lt__(self, other):
         return self._index < other._index
