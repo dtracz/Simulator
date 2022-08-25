@@ -21,7 +21,7 @@ class VMPlacementPolicyRandom(VMPlacementPolicySimple):
                 scheduler.schedule(vm)
                 return
         raise Exception(f"Non of the known machines is suitable for {vm.name}")
-    
+
 
 
 class VMPlacementPolicyAI(VMPlacementPolicySimple):
@@ -44,7 +44,8 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
         assert len(cores) > 0
         jobs = task._jobScheduler._jobQueue
         assert len(jobs) == 1
-        info = [jobs[0].operations, len(cores), rams[0].value]
+        cpu_ops = jobs[0].operations.get(RType.CPU_core, 0)
+        info = [cpu_ops, len(cores), rams[0].value]
         return np.array(info)
 
     @staticmethod

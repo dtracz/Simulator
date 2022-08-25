@@ -35,6 +35,7 @@ class RandomTrainer:
         scores = Parallel(n_jobs=self._n_threads)(
                 delayed(score_theta)(i) for i in range(self._epoch_size)
         )
+        #  scores = [score_theta(i) for i in range(self._epoch_size)]
         self._scores = np.array(scores)
 
     def getBests(self, n_bests):

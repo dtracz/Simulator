@@ -27,7 +27,7 @@ def getMachine(ram, cores, Scheduler):
     no_machines += 1
     return machine
 
-def run_simulation(generator, infrastructure, model, n_repeats=5): 
+def run_simulation(generator, infrastructure, model, n_repeats=5):
     if model is not None:
         policy = infrastructure._vmPlacementPolicy
         assert type(policy) is VMPlacementPolicyAI
@@ -42,7 +42,7 @@ def run_simulation(generator, infrastructure, model, n_repeats=5):
         totalOps = 0
         theoreticalTotalTime = 0
         for job in jobs:
-            ops = job.operations
+            ops = job.operations[RType.CPU_core]
             noThreads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
                                         job.resourceRequest)))
             totalOps += ops
@@ -63,7 +63,7 @@ VMScheduler = lambda *largs, **kwargs: \
     BinPackingScheduler(*largs, **kwargs, BinClass=SimpleBin, awaitBins=SEP_BINS)
 VMPlacementPolicy = lambda *largs, **kwargs: \
     VMPlacementPolicyAI(*largs, **kwargs, ModelClass=Model_v0_np)
-infrastructure = Infrastructure.getInstance(
+infrastructure = Infrastructure(
     [
         getMachine(32, 8*[CPU_SPEED], VMScheduler),
         getMachine(16, 4*[CPU_SPEED], VMScheduler),
@@ -83,7 +83,8 @@ generator = RandomJobGenerator(
             MAX_THREADS-1,
             TH_BIN_DIST_PARAM,
             s,
-    )
+    ),
+    noGPUs=lambda s: np.zeros(s, dtype=np.int32),
 )
 
 model = infrastructure._vmPlacementPolicy._model

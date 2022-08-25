@@ -19,7 +19,7 @@ class BinPackingScheduler(VMSchedulerSimple):
     """
 
 
-    def __init__(self, machine, BinClass=SimpleBin, awaitBins=False):
+    def __init__(self, machine, BinClass=SimpleBin, awaitBins=True):
         super().__init__(machine)
         self.BinClass = BinClass
         self._maxDims = {}

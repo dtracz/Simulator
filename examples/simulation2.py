@@ -76,7 +76,7 @@ def getMachine(ram, cores, Scheduler):
 
 
 CPU_SPEED = 3.6 # GHz
-infrastructure = Infrastructure.getInstance(
+infrastructure = Infrastructure(
     [
         getMachine(32, 8*[CPU_SPEED], VMScheduler),
         getMachine(16, 4*[CPU_SPEED], VMScheduler),
@@ -96,14 +96,15 @@ gen = RandomJobGenerator(
             args.MAX_THREADS-1,
             args.TH_BIN_DIST_PARAM,
             s,
-    )
+    ),
+    noGPUs=lambda s: np.zeros(s, dtype=np.int32),
 )
 jobs = gen.getJobs(args.NO_JOBS)
 
 totalOps = 0
 theoreticalTotalTime = 0
 for job in jobs:
-    ops = job.operations
+    ops = job.operations[RType.CPU_core]
     noThreads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
                                 job.resourceRequest)))
     totalOps += ops

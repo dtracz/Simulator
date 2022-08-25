@@ -14,7 +14,7 @@ class Infrastructure:
         self._vmPlacementPolicy = getVMPlacementPolicy(self.machines)
 
     def scheduleVM(self, vm):
-        self._vmPlacementPolicy.placeVM(vm)
+        return self._vmPlacementPolicy.placeVM(vm)
 
     def scheduleJob(self, job, vm):
         if vm not in self._knownVMs:
@@ -150,6 +150,9 @@ class Machine:
             if rtype not in resources.keys():
                 resources[rtype] = Multiset()
             resources[rtype].add(value)
+        for req in resHolder.resourceRequest:
+            if req.rtype not in resources.keys():
+                return False
         for req in filter(lambda r: not r.shared and r.value != INF,
                           resHolder.resourceRequest):
             avalRes = [v for v in resources[req.rtype] if v >= req.value]
