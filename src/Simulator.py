@@ -65,6 +65,8 @@ class NotificationListener(metaclass=ABCMeta):
     def notify(self, event):
         pass
 
+    def unregister(self):
+        Simulator.getInstance().unregisterListener(self)
 
 
 class Simulator:
@@ -113,7 +115,8 @@ class Simulator:
     def __init__(self):
         if Simulator.__self != None:
             raise Exception("Creating another instance of Simulator is forbidden")
-        self._listeners = []
+        self._listeners = set()
+        self._to_unregister = set()
         self._eventQueue = Simulator.EventQueue()
         #  self.addEvent(self.time, Event(lambda: None, "SimulationStart", 1000))
         Simulator.__self = self
@@ -134,6 +137,7 @@ class Simulator:
             time, event = self._eventQueue.proceed()
 
     def emit(self, notification):
+        self.updateListeners()
         for listener in self._listeners:
             listener.notify(notification)
     
@@ -144,7 +148,14 @@ class Simulator:
         self._eventQueue.removeEvent(event)
 
     def registerListener(self, listener):
-        self._listeners += [listener]
+        self._listeners.add(listener)
+
+    def unregisterListener(self, listener):
+        self._to_unregister.add(listener)
+
+    def updateListeners(self):
+        self._listeners = self._listeners.difference(self._to_unregister)
+        self._to_unregister = set()
 
     def clear(self):
         self._listeners = []

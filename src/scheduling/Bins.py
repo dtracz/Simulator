@@ -20,6 +20,10 @@ class SimpleBin:
         return longest.length
 
     @property
+    def vms(self):
+        return [task.vm for task in self._tasks]
+
+    @property
     def currentDims(self):
         dims = {}
         for rtype in self.maxDims.keys():
@@ -145,6 +149,10 @@ class TimelineBin(SimpleBin):
     def length(self):
         tp = self._tasks.timepoints()
         return tp[-1] - tp[0]
+
+    @property
+    def vms(self):
+        return [task.vm for task in self._tasks.allTasks]
 
     @property
     def currentDims(self):

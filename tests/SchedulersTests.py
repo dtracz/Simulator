@@ -100,7 +100,7 @@ class SchedulersTests(SimulatorTests):
 
         infrastructure = Infrastructure(
                 [m0, m1],
-                VMPlacmentPolicySimple,
+                VMPlacementPolicySimple,
         )
 
         def getVM(vm_id, ram, req_jobs):

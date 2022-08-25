@@ -83,7 +83,7 @@ for job in jobs:
 sim = Simulator.getInstance()
 sim.simulate()
 
-assert machine._vmScheduler.vmsLeft == 0
+assert machine._vmScheduler.noVMsLeft == 0
 
 thCPUBestTime = totalOps[RType.CPU_core] / (args.NO_CORES*args.CPU_SPEED)
 thGPUBestTime = totalOps[RType.GPU] / (args.NO_GPUS*args.N_CC*args.GPU_SPEED)
