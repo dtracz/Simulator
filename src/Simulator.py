@@ -118,7 +118,6 @@ class Simulator:
         self._listeners = set()
         self._to_unregister = set()
         self._eventQueue = Simulator.EventQueue()
-        #  self.addEvent(self.time, Event(lambda: None, "SimulationStart", 1000))
         Simulator.__self = self
         
     @staticmethod

@@ -61,7 +61,7 @@ class VMSchedulerSimple(NotificationListener):
            notif.host == self._machine:
             self._tryAllocate()
         if notif.what == NType.Other and \
-           notif.message == "SimulationStart":
+           (notif.message == "SimulationStart" or notif.message == "VMSchedule"):
             self._tryAllocate()
 
 

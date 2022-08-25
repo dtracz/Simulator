@@ -133,6 +133,7 @@ class Machine:
         return True
 
     def free(self, resHolder):
+        resHolder.unsetHost()
         if type(resHolder) not in self._users.keys() or \
            resHolder not in self._users[type(resHolder)]:
             raise Exception(f"{resHolder.name} is not allocated on this machine")
@@ -142,7 +143,6 @@ class Machine:
             srcRes.delUser(resHolder)
         assert resHolder.isAllocated == 0
         self.delUser(resHolder)
-        resHolder.unsetHost()
 
     def isFittable(self, resHolder):
         resources = {}

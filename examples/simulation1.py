@@ -35,6 +35,8 @@ parser.add_argument('--nCC', dest='N_CC', default=1024, type=int,
                     help='number of cuda cores per GPU')
 parser.add_argument('--jobs', dest='NO_JOBS', default=100, type=int)
 parser.add_argument('--dist-param', dest='TH_BIN_DIST_PARAM', default=0.1, type=float)
+parser.add_argument('--span', dest='SPAN', default=0, type=float,
+                    help='maximal time of scheduling tasks')
 parser.add_argument('--max-threads', dest='MAX_THREADS', default=-1, type=int)
 parser.add_argument('--seed', dest='SEED', default=-1, type=int)
 parser.add_argument('--scheduler', dest='SCHEDULER', default="Simple", type=str,
@@ -90,12 +92,18 @@ jobs = gen.getJobs(args.NO_JOBS)
 
 seqTime = 0
 totalOps = {}
+vms = []
 for job in jobs:
     seqTime += getJobTime(job)
     totalOps = dictPlus(totalOps, job.operations)
     vm = CreateVM.minimal([job], ownCores=True)
     vm.scheduleJob(job)
-    machine.scheduleVM(vm)
+    #  machine.scheduleVM(vm)
+    vms += [vm]
+
+delayScheduler = VMDelayScheduler(machine,
+        lambda n: np.random.uniform(0, args.SPAN, n))
+delayScheduler.scheduleVM(vms)
 
 sim = Simulator.getInstance()
 sim.simulate()

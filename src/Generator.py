@@ -1,6 +1,7 @@
-from numpy import random
+import numpy as np
 import json, string
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterable
 from Job import *
 from Resource import *
 from Machine import *
@@ -26,10 +27,10 @@ class JobGenerator(metaclass=ABCMeta):
 
 class RandomJobGenerator(JobGenerator):
     def __init__(self,
-                 operations=lambda s: abs(random.normal(100, 50, s)),
-                 noCores=lambda s: 1+random.binomial(7, 0.08, s),
-                 ramSize=lambda s: random.uniform(0, 16, s),
-                 noGPUs=lambda s: random.binomial(4, 0.05/7, s),
+                 operations=lambda s: abs(np.random.normal(100, 50, s)),
+                 noCores=lambda s: 1+np.random.binomial(7, 0.08, s),
+                 ramSize=lambda s: np.random.uniform(0, 16, s),
+                 noGPUs=lambda s: np.random.binomial(4, 0.05/7, s),
                  defaultNCC=INF):
         self._operations = operations
         self._noCores = noCores
@@ -135,4 +136,30 @@ class CreateVM:
         req += gpus
         vm = VirtualMachine(name, req, scheduler)
         return vm
+
+
+
+class VMDelayScheduler:
+    def __init__(self, target, delay_dist=lambda s: np.zeros(s)):
+        assert hasattr(target, 'scheduleVM')
+        self._delay_dist = delay_dist
+        self._target = target
+
+    def scheduleVM(self, vms, target=None, delays=None, times=None):
+        if target is None:
+            target = self._target
+        f = lambda x: x if isinstance(vms, Iterable) else [x]
+        vms = f(vms)
+        n = len(vms)
+        assert delays is None or times is None
+        if times is None:
+            if delays is None:
+                times = self._delay_dist(n) + NOW()
+            else:
+                times = f(delays) + NOW()
+        times = f(times)
+        sim = Simulator.getInstance()
+        for time, vm in zip(times, vms):
+            event = VMShedule(target, vm)
+            sim.addEvent(time, event)
 

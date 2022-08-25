@@ -127,3 +127,17 @@ class VMEnd(Event):
         Simulator.getInstance().emit(notif)
 
 
+
+class VMShedule(Event):
+    def __init__(self, target, vm, priority=0):
+        assert hasattr(target, 'scheduleVM')
+        super().__init__(lambda: None, f"VMShedule{vm.name}", priority)
+        self.target = target
+        self.vm = vm
+
+    def proceed(self):
+        self.target.scheduleVM(self.vm)
+        notif = Notification(NType.Other, message='VMSchedule',
+                             vm=self.vm, target=self.target)
+        Simulator.getInstance().emit(notif)
+
