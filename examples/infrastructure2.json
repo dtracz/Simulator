@@ -1,0 +1,42 @@
+{
+  "CPU_SPEED": 3.6,
+  "GPU_SPEED": 1.05,
+  "N_CC": 1664,
+  "MACHINES": [
+    {
+      "RAM": 32,
+      "CPU_CORES": 8,
+      "GPUS": 4 
+    },
+    {
+      "RAM": 16,
+      "CPU_CORES": 4,
+      "GPUS": 0 
+    },
+    {
+      "RAM": 16,
+      "CPU_CORES": 4,
+      "GPUS": 0 
+    },
+    {
+      "RAM": 8,
+      "CPU_CORES": 4,
+      "GPUS": 1 
+    },
+    {
+      "RAM": 8,
+      "CPU_CORES": 4,
+      "GPUS": 1 
+    },
+    {
+      "RAM": 8,
+      "CPU_CORES": 4,
+      "GPUS": 1 
+    },
+    {
+      "RAM": 8,
+      "CPU_CORES": 4,
+      "GPUS": 1 
+    }
+  ]
+}

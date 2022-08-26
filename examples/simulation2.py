@@ -8,11 +8,11 @@ from scheduling.BinPackingScheduler import *
 from scheduling.VMPlacementPolicies import *
 from scheduling.Models import *
 from Generator import *
+from toolkit import Global
 
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--speed', dest='CPU_SPEED', default=3.6, type=float)
 parser.add_argument('--jobs', dest='NO_JOBS', default=100, type=int)
 parser.add_argument('--max-threads', dest='MAX_THREADS', default=-1, type=int)
 parser.add_argument('--dist-param', dest='TH_BIN_DIST_PARAM', default=0.1, type=float)
@@ -26,6 +26,8 @@ parser.add_argument('--placement-policy', dest='PLACEMENT_POLICY', default="Simp
                     help='options: Simple, Random, AI')
 parser.add_argument('--model', dest='MODEL', default="Random", type=str,
                     help='options: Random')
+parser.add_argument('--inf', dest='INF', default="./infrastructure2.json", type=str,
+                    help='path to file with infrastructure decription')
 args = parser.parse_args()
 
 if args.SEED >= 0:
@@ -67,7 +69,7 @@ VMPlacementPolicy = PLACEMENT_POLICIES[args.PLACEMENT_POLICY]
 
 
 no_machines = 0
-def getMachine(ram, cores, Scheduler):
+def getMachine(ram, cores, gpus, Scheduler):
     resources = { Resource(Resource.Type.RAM, ram) }
     for core in cores:
         resources.add(Resource(Resource.Type.CPU_core, core))
@@ -77,23 +79,23 @@ def getMachine(ram, cores, Scheduler):
     return machine
 
 
-infrastructure = Infrastructure(
-    [
-        getMachine(32, 8*[args.CPU_SPEED], VMScheduler),
-        getMachine(16, 4*[args.CPU_SPEED], VMScheduler),
-        getMachine(16, 4*[args.CPU_SPEED], VMScheduler),
-        getMachine(8, 4*[args.CPU_SPEED], VMScheduler),
-        getMachine(8, 4*[args.CPU_SPEED], VMScheduler),
-        getMachine(8, 4*[args.CPU_SPEED], VMScheduler),
-        getMachine(8, 4*[args.CPU_SPEED], VMScheduler),
-    ],
-    VMPlacementPolicy,
-)
-max_NO_CORES = 8
-total_NO_CORES = 32
+Global.load(args.INF)
+machines = []
+max_NO_CORES = 0
+total_NO_CORES = 0
+for MACHINE in Global.MACHINES:
+    machine = getMachine(MACHINE.RAM,
+                         MACHINE.CPU_CORES*[Global.CPU_SPEED],
+                         MACHINE.GPUS*[(Global.N_CC, Global.GPU_SPEED)],
+                         VMScheduler,
+    )
+    machines += [machine]
+    max_NO_CORES = max(max_NO_CORES, MACHINE.CPU_CORES)
+    total_NO_CORES += MACHINE.CPU_CORES
+infrastructure = Infrastructure(machines, VMPlacementPolicy)
 
 gen = RandomJobGenerator(
-    noCores=lambda s: 1 + random.binomial(
+    noCores=lambda s: 1 + np.random.binomial(
             args.MAX_THREADS-1,
             args.TH_BIN_DIST_PARAM,
             s,
@@ -107,7 +109,7 @@ def getJobTime(job):
     noCPU_threads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
                                     job.resourceRequest)))
     cpu_cores = min(noCPU_threads, max_NO_CORES)
-    cpuTime = job.operations.get(RType.CPU_core, 0) / (cpu_cores * args.CPU_SPEED + 1e-8)
+    cpuTime = job.operations.get(RType.CPU_core, 0) / (cpu_cores * Global.CPU_SPEED + 1e-8)
     #  noGPUs = len(list(filter(lambda r: r.rtype == Resource.Type.GPU,
     #                                  job.resourceRequest)))
     #  gpu_cores = min(noGPUs, args.NO_GPUS) * args.N_CC
@@ -131,7 +133,7 @@ sim.simulate()
 for machine in infrastructure.machines:
     assert machine._vmScheduler.noVMsLeft == 0
 
-thCPUBestTime = totalOps.get(RType.CPU_core, 0) / (total_NO_CORES * args.CPU_SPEED)
+thCPUBestTime = totalOps.get(RType.CPU_core, 0) / (total_NO_CORES * Global.CPU_SPEED)
 print("simulation time:               ", sim.time)
 print("sequence execution time:       ", seqTime)
 print("theoretical best possible time:", thCPUBestTime)

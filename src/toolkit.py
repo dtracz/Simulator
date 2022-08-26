@@ -1,4 +1,5 @@
 from sortedcontainers import SortedDict, SortedSet
+import json
 
 
 INF = float('inf')
@@ -121,4 +122,41 @@ def dictMultiply(a, d):
     for i in d.keys():
         ans[i] = a * d[i]
     return ans
+
+
+
+class Global:
+    class Val:
+        pass
+
+    @classmethod
+    def load(cls, filename):
+        with open(filename, 'r') as file:
+            file_data = json.load(file)
+        cls._load(file_data, cls)
+
+    @classmethod
+    def _load(cls, inp, obj=None):
+        if type(inp) is list:
+            return cls._load_list(inp, obj)
+        if type(inp) is dict:
+            return cls._load_dict(inp, obj)
+        return inp
+
+    @classmethod
+    def _load_list(cls, inp_list, obj=None):
+        if obj is None:
+            obj = []
+        for elem in inp_list:
+            obj += [cls._load(elem)]
+        return obj
+
+    @classmethod
+    def _load_dict(cls, inp_dict, obj=None):
+        if obj is None:
+            obj = cls.Val()
+        for key, inp_value in inp_dict.items():
+            value = cls._load(inp_value)
+            setattr(obj, key, value)
+        return obj
 
