@@ -20,6 +20,10 @@ class SimpleBin:
         return longest.length
 
     @property
+    def priority(self):
+        return sum([task.job.priority for task in self._tasks])
+
+    @property
     def vms(self):
         return [task.vm for task in self._tasks]
 

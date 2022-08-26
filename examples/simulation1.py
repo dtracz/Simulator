@@ -81,12 +81,20 @@ for _ in range(args.NO_GPUS):
     resources.add(Resource(RType.GPU, args.N_CC, args.GPU_SPEED))
 machine = Machine("m0", resources, lambda m: None, Scheduler)
 
+
+def priorities(s):
+    ''' return list of `s` random functions `int -> int` '''
+    a_s = np.abs(np.random.normal(1, 0.3, s))/100
+    b_s = np.abs(np.random.normal(1,1,s))
+    return [(lambda t, a=a, b=b: a*t + b) for a, b in zip(a_s, b_s)]
+
 gen = RandomJobGenerator(
     noCores=lambda s: 1 + random.binomial(
             args.MAX_THREADS-1,
             args.TH_BIN_DIST_PARAM,
             s,
-    )
+    ),
+    priorities=priorities,
 )
 jobs = gen.getJobs(args.NO_JOBS)
 

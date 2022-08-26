@@ -11,13 +11,13 @@ from scheduling.BaseSchedulers import *
 class JobGenerator(metaclass=ABCMeta):
 
     @staticmethod
-    def createJob(operations, noCores, ramSize, gpus, machine=None):
+    def createJob(operations, noCores, ramSize, gpus, machine=None, priority=1):
         req = [ResourceRequest(RType.RAM, ramSize)]
         for _ in range(noCores):
             req += [ResourceRequest(RType.CPU_core, INF)]
         for nCC in gpus:
             req += [ResourceRequest(RType.GPU, nCC, shared=False)]
-        return Job(operations, req, machine)
+        return Job(operations, req, machine, priority)
 
     @abstractmethod
     def getJobs(self, n=1, machine=None):
@@ -31,18 +31,21 @@ class RandomJobGenerator(JobGenerator):
                  noCores=lambda s: 1+np.random.binomial(7, 0.08, s),
                  ramSize=lambda s: np.random.uniform(0, 16, s),
                  noGPUs=lambda s: np.random.binomial(4, 0.05/7, s),
+                 priorities=lambda s: np.ones(s),
                  defaultNCC=INF):
         self._operations = operations
         self._noCores = noCores
         self._ramSize = ramSize
         self._noGPUs = noGPUs
         self._nCC = defaultNCC
+        self._priorities = priorities
 
     def getJobs(self, n=1, machine=None):
         operations = list(self._operations(n))
         noCores = self._noCores(n)
         ramSize = self._ramSize(n)
         noGPUs = self._noGPUs(n)
+        priorities = self._priorities(n)
         for i in range(n):
             if noGPUs[i] > 0:
                 operations[i] = {
@@ -50,7 +53,7 @@ class RandomJobGenerator(JobGenerator):
                     RType.GPU: operations[i] * 30,
                 }
             job = self.createJob(operations[i], noCores[i], ramSize[i],
-                                 noGPUs[i]*[self._nCC], machine)
+                                 noGPUs[i]*[self._nCC], machine, priorities[i])
             yield job
             
 
@@ -160,6 +163,10 @@ class VMDelayScheduler:
         times = f(times)
         sim = Simulator.getInstance()
         for time, vm in zip(times, vms):
+            # make priorities 'start' at `time` instead of in 0
+            for job in vm._jobScheduler._jobQueue:
+                job._old_pr = job._priority
+                job._priority = lambda t, f=job._old_pr, time=time: f(t - time)
             event = VMShedule(target, vm)
             sim.addEvent(time, event)
 

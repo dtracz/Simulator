@@ -1,3 +1,4 @@
+from numbers import Number
 from sortedcontainers import SortedDict
 from Simulator import *
 from Resource import *
@@ -10,7 +11,8 @@ class Job(ResourcesHolder):
     """
     _noCreated = 0
 
-    def __init__(self, operations, resourceRequest, name=None):
+    def __init__(self, operations, resourceRequest,
+                 name=None, priority=1):
         super().__init__(resourceRequest)
         self._index = Job._noCreated
         if (name is None):
@@ -24,6 +26,14 @@ class Job(ResourcesHolder):
         self.predictedFinish = None
         self._updates = [] # [(time, speed)]
         Job._noCreated += 1
+        if isinstance(priority, Number):
+            self._priority = lambda _: priority
+        else:
+            self._priority = priority
+
+    @property
+    def priority(self):
+        return self._priority(NOW())
 
     def getCurrentSpeeds(self):
         totalFrequency = dict.fromkeys(self.operationsLeft.keys(), 0)
