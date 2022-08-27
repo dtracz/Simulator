@@ -79,7 +79,7 @@ max_NO_CORES = 8
 total_NO_CORES = 32
 
 generator = RandomJobGenerator(
-    noCores=lambda s: 1 + random.binomial(
+    noCores=lambda s: 1 + np.random.binomial(
             MAX_THREADS-1,
             TH_BIN_DIST_PARAM,
             s,

@@ -28,57 +28,64 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
     def __init__(self, machines, ModelClass=None):
         super().__init__(machines)
         self._machines = list(machines)[:]
-        self._model = ModelClass((len(machines), 10), 3, len(machines))
+        self._taskInfoSize = 6
+        self._machineInfoSize = 2*self._taskInfoSize + 3 + 3
+        self._model = ModelClass((len(self._machines), self._machineInfoSize),
+                                 self._taskInfoSize, len(self._machines))
 
     @staticmethod
     def _getTaskInfo(task):
         """
         Returns np.array of
-        [length, number of threads, requested ram size]
-        of given task (vm with 1 awaiting job)
+        [cpu length, gpu length, number of threads,
+        number of gpus, requested ram size, priority]
+        of given task.
         """
         request = task._resourceRequest
         rams = list(filter(lambda r: r.rtype == RType.RAM, request))
         assert len(rams) == 1
         cores = list(filter(lambda r: r.rtype == RType.CPU_core, request))
-        assert len(cores) > 0
+        gpus = list(filter(lambda r: r.rtype == RType.GPU, request))
         jobs = task._jobScheduler._jobQueue
-        assert len(jobs) == 1
-        cpu_ops = jobs[0].operations.get(RType.CPU_core, 0)
-        info = [cpu_ops, len(cores), rams[0].value]
+        assert len(jobs) > 0
+        cpu_ops = sum([job.operations.get(RType.CPU_core, 0) for job in jobs])
+        gpu_ops = sum([job.operations.get(RType.GPU, 0) for job in jobs])
+        priority = sum([job.priority for job in jobs])
+        info = [cpu_ops, gpu_ops, len(cores), len(gpus), rams[0].value, priority]
         return np.array(info)
 
-    @staticmethod
-    def _getMachineInfo(machine):
+    def _getMachineInfo(self, machine):
         """
-        Returns np.array of [ram size, number of cores,
-        number of awaiting tasks, theit total length per machine core,
-        means and standard deviations of lengths, number of threads
-        and requested ram sizes of awaiting tasks] (total 10 values)
+        Returns np.array of
+        [number of cores, number of gpus, ram size,
+        number of awaiting tasks, their total cpu and gpu lengths,
+        and means and standard deviations of awaiting tasks parameters]
         """
         rams = list(filter(lambda r: r.rtype == RType.RAM, machine.resources))
         assert len(rams) == 1
         cores = list(filter(lambda r: r.rtype == RType.CPU_core, machine.resources))
         assert len(cores) > 0
-        resource_info = [len(cores), rams[0].value]
+        gpus = list(filter(lambda r: r.rtype == RType.GPU, machine.resources))
+        resource_info = [len(cores), len(gpus), rams[0].value]
         vms = machine._vmScheduler.vms
         if len(vms) > 0:
-            vms_data = np.array([VMPlacementPolicyAI._getTaskInfo(vm) for vm in vms])
-            op_mean, core_mean, ram_mean = vms_data.mean(axis=0)
-            op_std, core_std, ram_std = vms_data.std(axis=0)
-            no_tasks = vms_data.shape[0]
-            total_length = vms_data[:,0].sum()
-            vms_info = [no_tasks, total_length/len(cores),
-                        op_mean, op_std, core_mean, core_std, ram_mean, ram_std]
+            vms_data = np.array([self._getTaskInfo(vm) for vm in vms])
+            means = vms_data.mean(axis=0)
+            stds = vms_data.std(axis=0)
+            no_tasks = len(vms)
+            cpu_length = vms_data[:,0].sum()
+            gpu_length = vms_data[:,1].sum()
+            add_info = [no_tasks, cpu_length, gpu_length]
+            vms_info = np.concatenate((add_info, means, stds))
         else:
-            vms_info = 8*[0]
-        info = resource_info + vms_info
-        return np.array(info)
+            vms_info = (2*self._taskInfoSize + 3)*[0]
+        info = np.concatenate((resource_info, vms_info))
+        return info
 
     def placeVM(self, vm):
+        task_info = self._getTaskInfo(vm)
         state_info = [self._getMachineInfo(machine) for machine in self._machines]
         state_info = np.array(state_info)
-        task_info = self._getTaskInfo(vm)
         # add batch dimension
         state_info = np.expand_dims(state_info, 0)
         task_info = np.expand_dims(task_info, 0)
