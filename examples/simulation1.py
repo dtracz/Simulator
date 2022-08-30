@@ -113,6 +113,7 @@ delayScheduler = VMDelayScheduler(machine,
         lambda n: np.random.uniform(0, args.SPAN, n))
 delayScheduler.scheduleVM(vms)
 
+metric = AUPMetric()
 sim = Simulator.getInstance()
 sim.simulate()
 
@@ -123,4 +124,5 @@ thGPUBestTime = totalOps.get(RType.GPU, 0) / (args.NO_GPUS * args.N_CC * args.GP
 print("simulation time:               ", sim.time)
 print("sequence execution time:       ", seqTime)
 print("theoretical best possible time:", max(thCPUBestTime, thGPUBestTime))
+print("priority cost:                 ", metric.cost(args.SPAN == 0))
 

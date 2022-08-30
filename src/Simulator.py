@@ -194,3 +194,57 @@ class EventInspector(NotificationListener):
     def verify(self):
         assert 0 == len(self._expectations)
 
+
+
+class JobDelayMetric(NotificationListener):
+    def __init__(self):
+        self._jobs = {}
+
+    def _add(self, job, time, i):
+        if job not in self._jobs:
+            self._jobs[job] = [0, None, job._priority]
+        self._jobs[job][i] = time
+
+    def notify(self, notif):
+        if notif.what == NType.Other and \
+           notif.message == "VMSchedule":
+            for job in notif.vm._jobScheduler._jobQueue:
+                self._add(job, NOW(), 0)
+        if notif.what == NType.JobStart:
+            self._add(notif.job, NOW(), 1)
+
+    @staticmethod
+    def _calculateCost(sched, start, f):
+        raise NotImplementedError()
+
+    def cost(self, acceptZeroSchedule=True):
+        cost = 0
+        for job, (sched, start, f) in self._jobs.items():
+            assert start is not None
+            assert acceptZeroSchedule or sched > 0
+            assert start >= sched
+            assert f(sched) > 0
+            cost += self._calculateCost(sched, start, f)
+        return cost / len(self._jobs)
+
+
+class PriorityIncreaseMetric(JobDelayMetric):
+
+    @staticmethod
+    def _calculateCost(sched, start, f):
+        return f(start) - f(sched)
+
+
+class AUPMetric(JobDelayMetric):
+    """
+    Area Under Priority over time of waiting
+    assuming linear increase
+    """
+
+    @staticmethod
+    def _calculateCost(sched, start, f):
+        t = start - sched
+        p0 = f(sched)
+        p1 = f(start)
+        return t*(p1 + p0)/2
+

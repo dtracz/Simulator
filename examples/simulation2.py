@@ -127,6 +127,7 @@ for job in jobs:
     vm.scheduleJob(job)
     infrastructure.scheduleVM(vm)
 
+metric = AUPMetric()
 sim = Simulator.getInstance()
 sim.simulate()
 
@@ -137,4 +138,5 @@ thCPUBestTime = totalOps.get(RType.CPU_core, 0) / (total_NO_CORES * Global.CPU_S
 print("simulation time:               ", sim.time)
 print("sequence execution time:       ", seqTime)
 print("theoretical best possible time:", thCPUBestTime)
+print("priority cost:                 ", metric.cost(args.SPAN == 0))
 
