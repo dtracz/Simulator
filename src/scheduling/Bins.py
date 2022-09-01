@@ -9,10 +9,11 @@ from scheduling.Task import *
 
 
 class SimpleBin:
-    def __init__(self, maxDims):
+    def __init__(self, maxDims, tasksLimit=None):
         self.maxDims = maxDims # {RType: maxSize}
         self._tasks = set()
         self._closed = False
+        self._tasksLimit = tasksLimit
 
     @property
     def length(self):
@@ -40,6 +41,8 @@ class SimpleBin:
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
+        if self._tasksLimit and len(self._tasks.allTasks) >= self._tasksLimit:
+            return False
         for rtype, value in task.dims.items():
             assert rtype in self.maxDims
             if value + self.currentDims[rtype] > self.maxDims[rtype]:
@@ -125,6 +128,8 @@ class ReductiveBin(SimpleBin):
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
+        if self._tasksLimit and len(self._tasks.allTasks) >= self._tasksLimit:
+            return False
         for rtype, value in task.dims.items():
             if rtype == RType.CPU_core:
                 continue
@@ -145,9 +150,10 @@ class ReductiveBin(SimpleBin):
 
 
 class TimelineBin(SimpleBin):
-    def __init__(self, maxDims):
+    def __init__(self, maxDims, tasksLimit=None):
         super().__init__(maxDims)
         self._tasks = Timeline()
+        self._tasksLimit = tasksLimit
 
     @property
     def length(self):
@@ -190,6 +196,8 @@ class TimelineBin(SimpleBin):
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
+        if self._tasksLimit and len(self._tasks.allTasks) >= self._tasksLimit:
+            return False
         for rtype, value in task.dims.items():
             assert rtype in self.maxDims
             if value > self.maxDims[rtype]:
@@ -203,8 +211,8 @@ class TimelineBin(SimpleBin):
 
 
 class OrderedTimelineBin(TimelineBin):
-    def __init__(self, maxDims):
-        super().__init__(maxDims)
+    def __init__(self, maxDims, tasksLimit=None):
+        super().__init__(maxDims, tasksLimit)
         self._prevTl = None
 
     @staticmethod
@@ -222,6 +230,8 @@ class OrderedTimelineBin(TimelineBin):
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
+        if self._tasksLimit and len(self._tasks.allTasks) >= self._tasksLimit:
+            return False
         for rtype, value in task.dims.items():
             assert rtype in self.maxDims
             if value > self.maxDims[rtype]:
@@ -269,7 +279,9 @@ def orderExhausive(timeline, maxDims):
         new_tl = Timeline()
         for task in tasksPerm:
             assert TimelineBin.addToTimeline(new_tl, maxDims, task)
-        if new_tl.timepoints()[-1] - new_tl.timepoints()[0] < best_score:
+        score = new_tl.timepoints()[-1] - new_tl.timepoints()[0]
+        if score < best_score:
+            best_score = score
             best_tl = new_tl
     return best_tl
 

@@ -44,13 +44,20 @@ parser.add_argument('--scheduler', dest='SCHEDULER', default="Simple", type=str,
 parser.add_argument('--sep-bins', dest='SEP_BINS', action="store_true")
 parser.add_argument('--bin-type', dest='BIN_TYPE', default="Simple", type=str,
                     help='options: Simple, Reductive, Timeline, OrderedTimeline')
+parser.add_argument('--bin-limit', dest='BIN_TASK_LIMIT', default=-1, type=int,
+                    help='max number of tasks per bin. -1 means no limit')
+parser.add_argument('--len-tol', dest='LEN_TOL', default=-1, type=float,
+                    help='tolerance of different lengths of tasks in bin. -1 means no limit')
 args = parser.parse_args()
 
 if args.SEED >= 0:
     random.seed(args.SEED)
-
 if args.MAX_THREADS < 0:
     args.MAX_THREADS = args.NO_CORES
+if args.BIN_TASK_LIMIT < 0:
+    args.BIN_TASK_LIMIT = None
+if args.LEN_TOL < 0:
+    args.LEN_TOL = None
 
 OrderedTimelineBinLF = OrderedTimelineBinClass(
     orderAdd    = orderLongestFirst,
@@ -67,7 +74,11 @@ Bin = BINS[args.BIN_TYPE]
 SCHEDULERS = {
     'Simple': VMSchedulerSimple,
     'BinPacking': lambda *largs, **kwargs: \
-        BinPackingScheduler(*largs, **kwargs, BinClass=Bin, awaitBins=args.SEP_BINS),
+        BinPackingScheduler(*largs, **kwargs,
+                            BinClass=Bin,
+                            awaitBins=args.SEP_BINS,
+                            binTasksLimit=args.BIN_TASK_LIMIT,
+                            lengthDiffTolerance=args.LEN_TOL),
 }
 Scheduler = SCHEDULERS[args.SCHEDULER]
 

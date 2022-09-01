@@ -19,7 +19,8 @@ class BinPackingScheduler(VMSchedulerSimple):
     """
 
 
-    def __init__(self, machine, BinClass=SimpleBin, awaitBins=True):
+    def __init__(self, machine, BinClass=SimpleBin,
+                 awaitBins=True, binTasksLimit=None, lengthDiffTolerance=None):
         super().__init__(machine)
         self.BinClass = BinClass
         self._maxDims = {}
@@ -45,6 +46,8 @@ class BinPackingScheduler(VMSchedulerSimple):
         self._bins = []
         self._currentBin = None
         self._listener = EventInspector() if awaitBins else None
+        self._binTasksLimit = binTasksLimit
+        self._lengthDiffTolerance = lengthDiffTolerance
 
     @property
     def noVMsLeft(self):
@@ -91,18 +94,24 @@ class BinPackingScheduler(VMSchedulerSimple):
             self._listener.addExpectation(what=NType.JobFinish, job=task.job)
         return task.vm
 
-    @staticmethod
-    def checkFitting(bucket, task):
-        lgthDiff = abs(bucket.length - task.length) / bucket.length
-        if lgthDiff > 0.3:
-            return None
+    def checkFitting(self, bucket, task):
+        if self._lengthDiffTolerance:
+            lgthDiff = abs(bucket.length - task.length) / bucket.length
+            if lgthDiff > self._lengthDiffTolerance:
+                return None
+        lgh0 = bucket.length
         eff0 = bucket.efficiency()
         if not bucket.add(task):
             return None
+        lgh1 = bucket.length
         eff1 = bucket.efficiency()
         bucket.remove(task)
+        if lgh1 + 1e-5 > lgh0 + task.length:
+            return None
         dEff = dictMinus(eff0, eff1)
-        return dictMultiply(1 - lgthDiff, dEff)
+        if self._lengthDiffTolerance:
+            return dictMultiply(1 - lgthDiff, dEff)
+        return dEff
 
     def schedule(self, vm):
         if not self._machine.isFittable(vm):
@@ -121,7 +130,7 @@ class BinPackingScheduler(VMSchedulerSimple):
                 bestBucket = bucket
                 bestScore = score
         if bestBucket is None:
-            self._bins += [self.BinClass(self._maxDims)]
+            self._bins += [self.BinClass(self._maxDims, self._binTasksLimit)]
             bestBucket = self._bins[-1]
         added = bestBucket.add(task)
         if not added:
