@@ -134,6 +134,7 @@ delayScheduler.scheduleVM(vms)
 #---RUN-------------------------------------------------------------------------
 
 metric = AUPMetric()
+eff_calc = EfficiencyCalculator()
 sim = Simulator.getInstance()
 sim.simulate()
 
@@ -145,4 +146,6 @@ print("simulation time:               ", sim.time)
 print("sequence execution time:       ", seqTime)
 print("theoretical best possible time:", max(thCPUBestTime, thGPUBestTime))
 print("priority cost:                 ", metric.cost(args.SPAN == 0))
+for m, d in eff_calc.get().items():
+    print(d)
 

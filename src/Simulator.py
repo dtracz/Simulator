@@ -1,6 +1,6 @@
 from enum import Enum
 from sortedcontainers import SortedDict, SortedSet
-from toolkit import MultiDictRevDict
+from toolkit import MultiDictRevDict, INF
 from abc import ABCMeta, abstractmethod
 
 
@@ -247,4 +247,59 @@ class AUPMetric(JobDelayMetric):
         p0 = f(sched)
         p1 = f(start)
         return t*(p1 + p0)/2
+
+
+
+class EfficiencyCalculator(NotificationListener):
+    def __init__(self):
+        self._machines = {}
+        self._running = {}
+
+    def _add(self, machine, resources):
+        if machine not in self._machines:
+            self._machines[machine] = {}
+        for rtype, value in resources.items():
+            if rtype not in self._machines[machine]:
+                self._machines[machine][rtype] = 0
+            self._machines[machine][rtype] += value
+
+    def _registerStart(self, job):
+        resources = job.operationsLeft.copy()
+        startTime = NOW()
+        self._running[job] = (resources, startTime)
+
+    def _registerFinish(self, job):
+        resources, startTime = self._running[job]
+        duration = NOW() - startTime
+        for req in job.resourceRequest:
+            if req.rtype not in resources:
+                assert req.value is not INF
+                resources[req.rtype] = req.value * duration
+        del self._running[job]
+        return resources
+
+    def notify(self, notif):
+        if notif.what == NType.JobStart:
+            self._registerStart(notif.job)
+        if notif.what == NType.JobFinish:
+            resources = self._registerFinish(notif.job)
+            host = notif.host
+            while str(type(host)) != "<class 'Machine.Machine'>":
+                host = host.host
+            self._add(host, resources)
+
+    def get(self):
+        result = {}
+        duration= NOW() - 0
+        for machine, resources in self._machines.items():
+            result[machine] = {}
+            for rtype, value in resources.items():
+                host_res = list(filter(lambda r: r.rtype == rtype,
+                                       machine.resources))
+                max_res = 0
+                for res in host_res:
+                    freq = 1 if res.freq is None else res.freq
+                    max_res += duration * res.value * freq
+                result[machine][rtype] = value/max_res
+        return result
 
