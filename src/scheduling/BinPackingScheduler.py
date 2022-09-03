@@ -70,6 +70,8 @@ class BinPackingScheduler(VMSchedulerSimple):
             return False
         #  self._currentBin = max(self._bins,
         #                         key=lambda b: b.efficiency()[RType.CPU_core])
+        #  self._currentBin = max(self._bins,
+        #                         key=lambda b: len(b.vms)/b.length)
         self._currentBin = max(self._bins,
                                key=lambda b: b.priority/b.length)
         idx = self._bins.index(self._currentBin)
