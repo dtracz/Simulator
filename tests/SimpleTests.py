@@ -2,6 +2,7 @@ import nose
 from tests.base_test import *
 from toolkit import INF
 from Simulator import *
+from Listeners import EventInspector
 from Resource import *
 from Machine import *
 from Job import *
