@@ -26,19 +26,12 @@ def getJobTime(job):
 #---ARGUMENT-PARSING------------------------------------------------------------
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--speed', dest='CPU_SPEED', default=3.6, type=float)
-parser.add_argument('--cores', dest='NO_CORES', default=4, type=int)
-parser.add_argument('--ram', dest='RAM_SIZE', default=16, type=float)
-parser.add_argument('--gpus', dest='NO_GPUS', default=4, type=int)
-parser.add_argument('--gpu-speed', dest='GPU_SPEED', default=1.05, type=float)
-parser.add_argument('--nCC', dest='N_CC', default=1024, type=int,
-                    help='number of cuda cores per GPU')
+parser.add_argument('--seed', dest='SEED', default=-1, type=int)
 parser.add_argument('--jobs', dest='NO_JOBS', default=100, type=int)
 parser.add_argument('--dist-param', dest='TH_BIN_DIST_PARAM', default=0.1, type=float)
 parser.add_argument('--span', dest='SPAN', default=0, type=float,
                     help='maximal time of scheduling tasks')
 parser.add_argument('--max-threads', dest='MAX_THREADS', default=-1, type=int)
-parser.add_argument('--seed', dest='SEED', default=-1, type=int)
 parser.add_argument('--scheduler', dest='SCHEDULER', default="Simple", type=str,
                     help='options: Simple, BinPacking')
 parser.add_argument('--sep-bins', dest='SEP_BINS', action="store_true")
@@ -49,6 +42,13 @@ parser.add_argument('--bin-limit', dest='BIN_TASK_LIMIT', default=-1, type=int,
 parser.add_argument('--len-tol', dest='LEN_TOL', default=-1, type=float,
                     help='tolerance of different lengths of tasks in bin. -1 means no limit')
 parser.add_argument('--pr-param', dest='PP', default=1, type=float)
+parser.add_argument('--speed', dest='CPU_SPEED', default=3.6, type=float)
+parser.add_argument('--cores', dest='NO_CORES', default=4, type=int)
+parser.add_argument('--ram', dest='RAM_SIZE', default=16, type=float)
+parser.add_argument('--gpus', dest='NO_GPUS', default=4, type=int)
+parser.add_argument('--gpu-speed', dest='GPU_SPEED', default=1.05, type=float)
+parser.add_argument('--nCC', dest='N_CC', default=1024, type=int,
+                    help='number of cuda cores per GPU')
 args = parser.parse_args()
 
 if args.SEED >= 0:
@@ -84,7 +84,7 @@ SCHEDULERS = {
 Scheduler = SCHEDULERS[args.SCHEDULER]
 
 
-#---MAIN------------------------------------------------------------------------
+#---GET-MACHINE-----------------------------------------------------------------
 
 resources = { Resource(RType.RAM, args.RAM_SIZE) }
 for _ in range(args.NO_CORES):
@@ -93,6 +93,8 @@ for _ in range(args.NO_GPUS):
     resources.add(Resource(RType.GPU, args.N_CC, args.GPU_SPEED))
 machine = Machine("m0", resources, lambda m: None, Scheduler)
 
+
+#---GET-JOBS--------------------------------------------------------------------
 
 def priorities(s):
     ''' return list of `s` random functions `int -> int` '''
@@ -110,6 +112,9 @@ gen = RandomJobGenerator(
 )
 jobs = gen.getJobs(args.NO_JOBS)
 
+
+#---SCHEDULE--------------------------------------------------------------------
+
 seqTime = 0
 totalOps = {}
 vms = []
@@ -124,6 +129,9 @@ for job in jobs:
 delayScheduler = VMDelayScheduler(machine,
         lambda n: np.random.uniform(0, args.SPAN, n))
 delayScheduler.scheduleVM(vms)
+
+
+#---RUN-------------------------------------------------------------------------
 
 metric = AUPMetric()
 sim = Simulator.getInstance()

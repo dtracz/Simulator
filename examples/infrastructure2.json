@@ -1,42 +1,39 @@
 {
-  "CPU_SPEED": 3.6,
-  "GPU_SPEED": 1.05,
-  "N_CC": 1664,
   "MACHINES": [
     {
       "RAM": 32,
-      "CPU_CORES": 8,
-      "GPUS": 4 
+      "CPU_CORES": [3.6,3.6,3.6,3.6, 3.6,3.6,3.6,3.6],
+      "GPUS": [[1644, 1.05], [1644, 1.05], [1644, 1.05], [1644, 1.05]]
     },
     {
       "RAM": 16,
-      "CPU_CORES": 4,
-      "GPUS": 0 
+      "CPU_CORES": [3.6,3.6,3.6,3.6],
+      "GPUS": []
     },
     {
       "RAM": 16,
-      "CPU_CORES": 4,
-      "GPUS": 0 
+      "CPU_CORES": [3.6,3.6,3.6,3.6],
+      "GPUS": []
     },
     {
       "RAM": 8,
-      "CPU_CORES": 4,
-      "GPUS": 1 
+      "CPU_CORES": [3.6,3.6,3.6,3.6],
+      "GPUS": [[1644, 1.05]]
     },
     {
       "RAM": 8,
-      "CPU_CORES": 4,
-      "GPUS": 1 
+      "CPU_CORES": [3.6,3.6,3.6,3.6],
+      "GPUS": [[1644, 1.05]]
     },
     {
       "RAM": 8,
-      "CPU_CORES": 4,
-      "GPUS": 1 
+      "CPU_CORES": [3.6,3.6,3.6,3.6],
+      "GPUS": [[1644, 1.05]]
     },
     {
       "RAM": 8,
-      "CPU_CORES": 4,
-      "GPUS": 1 
+      "CPU_CORES": [3.6,3.6,3.6,3.6],
+      "GPUS": [[1644, 1.05]]
     }
   ]
 }
