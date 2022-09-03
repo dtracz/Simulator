@@ -48,6 +48,7 @@ parser.add_argument('--bin-limit', dest='BIN_TASK_LIMIT', default=-1, type=int,
                     help='max number of tasks per bin. -1 means no limit')
 parser.add_argument('--len-tol', dest='LEN_TOL', default=-1, type=float,
                     help='tolerance of different lengths of tasks in bin. -1 means no limit')
+parser.add_argument('--pr-param', dest='PP', default=1, type=float)
 args = parser.parse_args()
 
 if args.SEED >= 0:
@@ -95,8 +96,8 @@ machine = Machine("m0", resources, lambda m: None, Scheduler)
 
 def priorities(s):
     ''' return list of `s` random functions `int -> int` '''
-    a_s = np.abs(np.random.normal(1, 0.3, s))/100
-    b_s = np.abs(np.random.normal(1,1,s))
+    a_s = np.abs(np.random.normal(1, 0.3*args.PP, s))/100
+    b_s = np.abs(np.random.normal(1, 1.0*args.PP, s))
     return [(lambda t, a=a, b=b: a*t + b) for a, b in zip(a_s, b_s)]
 
 gen = RandomJobGenerator(
