@@ -71,6 +71,14 @@ class FromFileJobGenerator(JobGenerator):
         letters = string.ascii_lowercase
         return ''.join([np.random.choice(list(letters)) for i in range(length)])
 
+    @staticmethod
+    def _parseTime(report):
+        time = report['stats']['cpu']['usage']
+        if time[-1] == 's':
+            time = time[:-1]
+        time = float(time.strip())
+        return time
+
     def parseLine(self, line):
         tmp = ''
         while tmp in line:
@@ -82,8 +90,9 @@ class FromFileJobGenerator(JobGenerator):
         jobRequest = json.loads(parts[1])
         jobReport = json.loads(parts[3])
         cpuType = jobRequest['requires'][0].split(':')[1]
-        timeLimit = float(jobRequest['limits']['time'][:-1])
-        ops = self.cpuSpeeds[cpuType] * timeLimit
+        time = self._parseTime(jobReport)
+        assert time > 0
+        ops = self.cpuSpeeds[cpuType] * time
         noCores = int(jobRequest['limits']['cpus'])
         ramSize = int(jobRequest['limits']['memory'][:-1]) / 1e9
         return ops, noCores, ramSize
