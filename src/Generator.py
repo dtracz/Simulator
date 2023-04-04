@@ -59,15 +59,17 @@ class RandomJobGenerator(JobGenerator):
 
 
 class FromFileJobGenerator(JobGenerator):
-    def __init__(self, fname):
+    def __init__(self, fname,
+                 priorities=lambda s: np.ones(s)):
         self.fname = fname
         self.cpuSpeeds = {'xeon e3-1270 v5': 3.6}
         self.file = open(self.fname)
+        self._priorities = priorities
 
     @staticmethod
     def _randWord(length):
         letters = string.ascii_lowercase
-        return ''.join([random.choice(list(letters)) for i in range(length)])
+        return ''.join([np.random.choice(list(letters)) for i in range(length)])
 
     def parseLine(self, line):
         tmp = ''
@@ -87,6 +89,7 @@ class FromFileJobGenerator(JobGenerator):
         return ops, noCores, ramSize
 
     def getJobs(self, n=1, machine=None):
+        p = self._priorities(n)
         while n > 0:
             n -= 1
             try:
@@ -97,7 +100,8 @@ class FromFileJobGenerator(JobGenerator):
             except Exception:
                 n += 1
                 continue
-            job = self.createJob(ops, noCores, ramSize, machine)
+            job = self.createJob(ops, noCores, ramSize,
+                                 gpus=[], machine=machine, priority=p[n])
             yield job
 
 
