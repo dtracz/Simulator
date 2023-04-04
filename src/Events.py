@@ -131,7 +131,7 @@ class VMEnd(Event):
 class VMShedule(Event):
     def __init__(self, target, vm, priority=0):
         assert hasattr(target, 'scheduleVM')
-        super().__init__(lambda: None, f"VMShedule{vm.name}", priority)
+        super().__init__(lambda: None, f"VMShedule_{vm.name}", priority)
         self.target = target
         self.vm = vm
 
