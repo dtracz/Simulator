@@ -93,10 +93,6 @@ parser.add_argument('--bin-limit', dest='BIN_TASK_LIMIT', default=-1, type=int,
 parser.add_argument('--len-tol', dest='LEN_TOL', default=-1, type=float,
                     help='tolerance of different lengths of tasks in bin. -1 means no limit')
 parser.add_argument('--pr-param', dest='PP', default=1, type=float)
-parser.add_argument('--placement-policy', dest='PLACEMENT_POLICY', default="Simple", type=str,
-                    help='options: Simple, Random, AI')
-parser.add_argument('--model', dest='MODEL', default="Random", type=str,
-                    help='options: Random, v0_np')
 parser.add_argument('--inf', dest='INF', default="./infrastructure2.json", type=str,
                     help='path to file with infrastructure decription')
 parser.add_argument('--save-vars', dest='VARFILE', default=None, type=str,
@@ -136,19 +132,9 @@ SCHEDULERS = {
                             lengthDiffTolerance=args.LEN_TOL),
 }
 VMScheduler = SCHEDULERS[args.SCHEDULER]
-
-MODELS = {
-    'Random': RandomModel,
-    'v0_np': Model_v0_np,
-}
-Model = MODELS[args.MODEL]
-PLACEMENT_POLICIES = {
-    'Simple': VMPlacementPolicySimple,
-    'Random': VMPlacementPolicyRandom,
-    'AI': lambda *largs, **kwargs: \
-        VMPlacementPolicyAI(*largs, **kwargs, ModelClass=Model),
-}
-VMPlacementPolicy = PLACEMENT_POLICIES[args.PLACEMENT_POLICY]
+Model = Model_v0_np
+VMPlacementPolicy = lambda *largs, **kwargs: \
+        VMPlacementPolicyAI(*largs, **kwargs, ModelClass=Model) 
 
 
 #---GET-INFRASTRUCTURE----------------------------------------------------------
