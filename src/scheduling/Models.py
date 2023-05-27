@@ -12,14 +12,22 @@ class RandomModel:
         np.random.shuffle(y)
         return y
 
+    def eval(self):
+        pass
+
 
 
 class Model_v0_np:
-    def __init__(self, machines_dims, task_dim, a_space):
+    def __init__(self, machines_dims, task_dim, a_space, varfile=None):
         super().__init__()
         mdy, mdx = machines_dims
-        self.fc0 = np.random.uniform(0,1, (mdx+task_dim, 32))
-        self.fc1 = np.random.uniform(0,1, (32+task_dim, 1))
+        if varfile:
+            self.fc0 = np.zeros((mdx+task_dim, 32))
+            self.fc1 = np.zeros((32+task_dim, 1))
+            self.loadVars(varfile)
+        else:
+            self.fc0 = np.random.uniform(0,1, (mdx+task_dim, 32))
+            self.fc1 = np.random.uniform(0,1, (32+task_dim, 1))
         self.leakyRelU_param = 0.01
 
     def getVars(self):
@@ -31,6 +39,16 @@ class Model_v0_np:
         self.fc0 = varList[0]
         assert varList[1].shape == self.fc1.shape
         self.fc1 = varList[1]
+
+    def saveVars(self, varfile):
+        varList = self.getVars()
+        varList = np.asanyarray(varList, dtype=object)
+        np.savez(varfile, varList)
+
+    def loadVars(self, varfile):
+        data = np.load(varfile, allow_pickle=True)
+        varList = list(data[data.files[0]])
+        self.setVars(varList)
 
     @staticmethod
     def prepare(inp):
@@ -62,17 +80,31 @@ class Model_v0_np:
         x = self.softmax(x)
         return x
 
+    def eval(self):
+        pass
+
 
 
 class Model_v0_torch(torch.nn.Module):
-    def __init__(self, machines_dims, task_dim, a_space):
+    def __init__(self, machines_dims, task_dim, a_space, varfile=None):
         super().__init__()
         mdy, mdx = machines_dims
+        self.bn0 = torch.nn.BatchNorm1d(mdx+task_dim)
         self.conv0 = torch.nn.Conv1d(mdx+task_dim, 32, 1, bias = False)
         self.activ0 = torch.nn.LeakyReLU()
+        self.bn1 = torch.nn.BatchNorm1d(32+task_dim)
         self.conv1 = torch.nn.Conv1d(32+task_dim, 1, 1, bias = False)
         self.flat = torch.nn.Flatten()
         self.sm = torch.nn.Softmax(dim=-1)
+        if varfile:
+            self.loadVars(varfile)
+
+    def saveVars(self, varfile):
+        torch.save(self.state_dict(), f"{varfile}.pth")
+
+    def loadVars(self, varfile):
+        data = torch.load(varfile)
+        self.load_state_dict(data)
 
     @staticmethod
     def prepare(inp):
@@ -86,9 +118,11 @@ class Model_v0_torch(torch.nn.Module):
     def forward(self, inp):
         x, cat = self.prepare(inp)
         x = torch.cat((x, cat), 1)
+        x = self.bn0(x)
         x = self.conv0(x)
         x = self.activ0(x)
         x = torch.cat((x, cat), 1)
+        x = self.bn1(x)
         x = self.conv1(x)
         x = self.flat(x)
         x = self.sm(x)
