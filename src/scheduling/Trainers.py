@@ -35,10 +35,12 @@ class RandomTrainer:
             varList = self.toVars(self._thetas[i])
             self.model.setVars(varList)
             return self.score_fun(self.model)
-        scores = Parallel(n_jobs=self._n_threads)(
-                delayed(score_theta)(i) for i in range(self._epoch_size)
-        )
-        #  scores = [score_theta(i) for i in range(self._epoch_size)]
+        # IMPOSSIBLE due to Simulator is a singleton
+        # TODO: make Simulator thread local
+        #  scores = Parallel(n_jobs=self._n_threads)(
+        #          delayed(score_theta)(i) for i in range(self._epoch_size)
+        #  )
+        scores = [score_theta(i) for i in range(self._epoch_size)]
         self._scores = np.array(scores)
 
     def getBests(self, n_bests):
