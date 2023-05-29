@@ -15,7 +15,6 @@ from toolkit import Global
 #---FUNCIONS--------------------------------------------------------------------
 
 def getJobTime(job, best_CPUs, best_GPUs):
-    ops = job.operations
     no_cores, cpu_freq = best_CPUs
     noCPU_threads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
                                     job.resourceRequest)))
@@ -52,9 +51,12 @@ parser.add_argument('--pr-param', dest='PP', default=1, type=float)
 parser.add_argument('--placement-policy', dest='PLACEMENT_POLICY', default="Simple", type=str,
                     help='options: Simple, Random, AI')
 parser.add_argument('--model', dest='MODEL', default="Random", type=str,
-                    help='options: Random')
+                    help='options: Random, v0_np, v0_torch')
 parser.add_argument('--inf', dest='INF', default="./infrastructure2.json", type=str,
                     help='path to file with infrastructure decription')
+parser.add_argument('--load-vars', dest='VARFILE', default=None, type=str,
+                    help='path to wile with AI model weights')
+parser.add_argument('--jobs-file', dest='JOBS_FILE', default=None, type=str)
 args = parser.parse_args()
 
 if args.SEED >= 0:
@@ -92,8 +94,15 @@ VMScheduler = SCHEDULERS[args.SCHEDULER]
 
 MODELS = {
     'Random': RandomModel,
+    'v0_np': Model_v0_np,
+    'v0_torch': Model_v0_torch,
 }
-Model = MODELS[args.MODEL]
+if args.VARFILE:
+    Model = lambda *largs, **kwargs: \
+        MODELS[args.MODEL](*largs, **kwargs, varfile=args.VARFILE)
+else:
+    Model = MODELS[args.MODEL]
+
 PLACEMENT_POLICIES = {
     'Simple': VMPlacementPolicySimple,
     'Random': VMPlacementPolicyRandom,
@@ -150,15 +159,18 @@ def priorities(s):
     b_s = np.abs(np.random.normal(1, 1.0*args.PP, s))
     return [(lambda t, a=a, b=b: a*t + b) for a, b in zip(a_s, b_s)]
 
-gen = RandomJobGenerator(
-    noCores=lambda s: 1 + np.random.binomial(
-            args.MAX_THREADS-1,
-            args.TH_BIN_DIST_PARAM,
-            s,
-    ),
-    #  noGPUs=lambda s: np.zeros(s, dtype=np.int32),
-    priorities=priorities,
-)
+if args.JOBS_FILE is not None:
+    gen = FromFileJobGenerator(args.JOBS_FILE, priorities)
+else:
+    gen = RandomJobGenerator(
+        noCores=lambda s: 1 + np.random.binomial(
+                args.MAX_THREADS-1,
+                args.TH_BIN_DIST_PARAM,
+                s,
+        ),
+        #  noGPUs=lambda s: np.zeros(s, dtype=np.int32),
+        priorities=priorities,
+    )
 jobs = gen.getJobs(args.NO_JOBS)
 
 
@@ -174,6 +186,7 @@ for job in jobs:
     vm.scheduleJob(job)
     #  infrastructure.scheduleVM(vm)
     vms += [vm]
+assert len(vms) == args.NO_JOBS
 
 delayScheduler = VMDelayScheduler(infrastructure,
         lambda n: np.random.uniform(0, args.SPAN, n))
@@ -181,6 +194,9 @@ delayScheduler.scheduleVM(vms)
 
 
 #---RUN-------------------------------------------------------------------------
+
+# sets module to evaluation mode (required in torch)
+infrastructure._vmPlacementPolicy._model.eval()
 
 metric = AUPMetric()
 eff_calc = EfficiencyCalculator()
@@ -196,6 +212,4 @@ print("simulation time:               ", sim.time)
 print("sequence execution time:       ", seqTime)
 print("theoretical best possible time:", max(thCPUBestTime, thGPUBestTime))
 print("priority cost:                 ", metric.cost(args.SPAN == 0))
-for m, d in eff_calc.get().items():
-    print(d)
 
