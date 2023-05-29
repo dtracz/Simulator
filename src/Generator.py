@@ -59,15 +59,25 @@ class RandomJobGenerator(JobGenerator):
 
 
 class FromFileJobGenerator(JobGenerator):
-    def __init__(self, fname):
+    def __init__(self, fname,
+                 priorities=lambda s: np.ones(s)):
         self.fname = fname
         self.cpuSpeeds = {'xeon e3-1270 v5': 3.6}
         self.file = open(self.fname)
+        self._priorities = priorities
 
     @staticmethod
     def _randWord(length):
         letters = string.ascii_lowercase
-        return ''.join([random.choice(list(letters)) for i in range(length)])
+        return ''.join([np.random.choice(list(letters)) for i in range(length)])
+
+    @staticmethod
+    def _parseTime(report):
+        time = report['stats']['cpu']['usage']
+        if time[-1] == 's':
+            time = time[:-1]
+        time = float(time.strip())
+        return time
 
     def parseLine(self, line):
         tmp = ''
@@ -80,13 +90,15 @@ class FromFileJobGenerator(JobGenerator):
         jobRequest = json.loads(parts[1])
         jobReport = json.loads(parts[3])
         cpuType = jobRequest['requires'][0].split(':')[1]
-        timeLimit = float(jobRequest['limits']['time'][:-1])
-        ops = self.cpuSpeeds[cpuType] * timeLimit
+        time = self._parseTime(jobReport)
+        assert time > 0
+        ops = self.cpuSpeeds[cpuType] * time
         noCores = int(jobRequest['limits']['cpus'])
         ramSize = int(jobRequest['limits']['memory'][:-1]) / 1e9
         return ops, noCores, ramSize
 
     def getJobs(self, n=1, machine=None):
+        p = self._priorities(n)
         while n > 0:
             n -= 1
             try:
@@ -97,7 +109,8 @@ class FromFileJobGenerator(JobGenerator):
             except Exception:
                 n += 1
                 continue
-            job = self.createJob(ops, noCores, ramSize, machine)
+            job = self.createJob(ops, noCores, ramSize,
+                                 gpus=[], machine=machine, priority=p[n])
             yield job
 
 

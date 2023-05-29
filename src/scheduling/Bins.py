@@ -41,7 +41,7 @@ class SimpleBin:
     def add(self, task):
         if self._closed:
             raise Exception("Bin already closed")
-        if self._tasksLimit and len(self._tasks.allTasks) >= self._tasksLimit:
+        if self._tasksLimit and len(self._tasks) >= self._tasksLimit:
             return False
         for rtype, value in task.dims.items():
             assert rtype in self.maxDims

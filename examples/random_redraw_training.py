@@ -1,3 +1,4 @@
+import sys
 import argparse
 import numpy as np
 from Simulator import *
@@ -8,25 +9,69 @@ from scheduling.BaseSchedulers import *
 from scheduling.BinPackingScheduler import *
 from scheduling.VMPlacementPolicies import *
 from scheduling.Models import *
+from scheduling.Trainers import *
 from Generator import *
 from toolkit import Global
 
 
+
 #---FUNCIONS--------------------------------------------------------------------
 
-def getJobTime(job, best_CPUs, best_GPUs):
-    no_cores, cpu_freq = best_CPUs
+def getJobTime(job):
+    global best_CPU_set
+    no_cores, cpu_freq = best_CPU_set
     noCPU_threads = len(list(filter(lambda r: r.rtype == Resource.Type.CPU_core,
                                     job.resourceRequest)))
     cpu_cores = min(noCPU_threads, no_cores)
     cpuTime = job.operations.get(RType.CPU_core, 0) / (cpu_cores * cpu_freq)
 
-    no_gpus, gpu_pow = best_GPUs
+    global best_GPU_set
+    no_gpus, gpu_pow = best_GPU_set
     noGPUs = len(list(filter(lambda r: r.rtype == Resource.Type.GPU,
                                     job.resourceRequest)))
     gpu_cores = min(noGPUs, no_gpus)
     gpuTime = job.operations.get(RType.GPU, 0) / (gpu_cores * gpu_pow + 1e-8)
     return max(cpuTime, gpuTime)
+
+
+def run_simulation(generator, infrastructure, model, n_repeats=5):
+    if model is not None:
+        policy = infrastructure._vmPlacementPolicy
+        assert isinstance(policy, VMPlacementPolicyAI)
+        policy._model = model
+
+    score = 0
+    for _ in range(n_repeats):
+        sim = Simulator.getInstance()
+        sim._eventQueue._currentTime = 0
+        sim._eventQueue._done = []
+
+        jobs = generator.getJobs(args.NO_JOBS)
+        #  totalOps = {}
+        #  seqTime = 0
+        vms = []
+        for job in jobs:
+            #  seqTime += getJobTime(job)
+            #  totalOps = dictPlus(totalOps, job.operations)
+            vm = CreateVM.minimal([job], ownCores=True)
+            vm.scheduleJob(job)
+            #  infrastructure.scheduleVM(vm)
+            vms += [vm]
+
+        delayScheduler = VMDelayScheduler(infrastructure,
+                lambda n: np.random.uniform(0, args.SPAN, n))
+        delayScheduler.scheduleVM(vms)
+
+        metric = AUPMetric()
+        sim.simulate()
+        metric.unregister()
+
+        for machine in infrastructure.machines:
+            assert machine._vmScheduler.noVMsLeft == 0
+        #  print("t:", sim.time)
+        #  score += sim.time
+        score += metric.cost(args.SPAN == 0)
+    return score / n_repeats
 
 
 #---ARGUMENT-PARSING------------------------------------------------------------
@@ -48,15 +93,11 @@ parser.add_argument('--bin-limit', dest='BIN_TASK_LIMIT', default=-1, type=int,
 parser.add_argument('--len-tol', dest='LEN_TOL', default=-1, type=float,
                     help='tolerance of different lengths of tasks in bin. -1 means no limit')
 parser.add_argument('--pr-param', dest='PP', default=1, type=float)
-parser.add_argument('--placement-policy', dest='PLACEMENT_POLICY', default="Simple", type=str,
-                    help='options: Simple, Random, AI')
-parser.add_argument('--model', dest='MODEL', default="Random", type=str,
-                    help='options: Random, v0_np, v0_torch')
 parser.add_argument('--inf', dest='INF', default="./infrastructure2.json", type=str,
                     help='path to file with infrastructure decription')
-parser.add_argument('--load-vars', dest='VARFILE', default=None, type=str,
-                    help='path to wile with AI model weights')
-parser.add_argument('--jobs-file', dest='JOBS_FILE', default=None, type=str)
+parser.add_argument('--save-vars', dest='VARFILE', default=None, type=str,
+                    help='path to create files to save model weights')
+parser.add_argument('--epochs', dest='N_EPOCHS', default=100, type=int)
 args = parser.parse_args()
 
 if args.SEED >= 0:
@@ -91,25 +132,9 @@ SCHEDULERS = {
                             lengthDiffTolerance=args.LEN_TOL),
 }
 VMScheduler = SCHEDULERS[args.SCHEDULER]
-
-MODELS = {
-    'Random': RandomModel,
-    'v0_np': Model_v0_np,
-    'v0_torch': Model_v0_torch,
-}
-if args.VARFILE:
-    Model = lambda *largs, **kwargs: \
-        MODELS[args.MODEL](*largs, **kwargs, varfile=args.VARFILE)
-else:
-    Model = MODELS[args.MODEL]
-
-PLACEMENT_POLICIES = {
-    'Simple': VMPlacementPolicySimple,
-    'Random': VMPlacementPolicyRandom,
-    'AI': lambda *largs, **kwargs: \
-        VMPlacementPolicyAI(*largs, **kwargs, ModelClass=Model),
-}
-VMPlacementPolicy = PLACEMENT_POLICIES[args.PLACEMENT_POLICY]
+Model = Model_v0_np
+VMPlacementPolicy = lambda *largs, **kwargs: \
+        VMPlacementPolicyAI(*largs, **kwargs, ModelClass=Model) 
 
 
 #---GET-INFRASTRUCTURE----------------------------------------------------------
@@ -159,57 +184,31 @@ def priorities(s):
     b_s = np.abs(np.random.normal(1, 1.0*args.PP, s))
     return [(lambda t, a=a, b=b: a*t + b) for a, b in zip(a_s, b_s)]
 
-if args.JOBS_FILE is not None:
-    gen = FromFileJobGenerator(args.JOBS_FILE, priorities)
-else:
-    gen = RandomJobGenerator(
-        noCores=lambda s: 1 + np.random.binomial(
-                args.MAX_THREADS-1,
-                args.TH_BIN_DIST_PARAM,
-                s,
-        ),
-        #  noGPUs=lambda s: np.zeros(s, dtype=np.int32),
-        priorities=priorities,
-    )
+gen = RandomJobGenerator(
+    noCores=lambda s: 1 + np.random.binomial(
+            args.MAX_THREADS-1,
+            args.TH_BIN_DIST_PARAM,
+            s,
+    ),
+    #  noGPUs=lambda s: np.zeros(s, dtype=np.int32),
+    priorities=priorities,
+)
 jobs = gen.getJobs(args.NO_JOBS)
 
 
-#---SCHEDULE--------------------------------------------------------------------
+#---TRAINING--------------------------------------------------------------------
 
-seqTime = 0
-totalOps = {}
-vms = []
-for job in jobs:
-    seqTime += getJobTime(job, best_CPU_set, best_GPU_set)
-    totalOps = dictPlus(totalOps, job.operations)
-    vm = CreateVM.minimal([job], ownCores=True)
-    vm.scheduleJob(job)
-    #  infrastructure.scheduleVM(vm)
-    vms += [vm]
-assert len(vms) == args.NO_JOBS
-
-delayScheduler = VMDelayScheduler(infrastructure,
-        lambda n: np.random.uniform(0, args.SPAN, n))
-delayScheduler.scheduleVM(vms)
-
-
-#---RUN-------------------------------------------------------------------------
-
-# sets module to evaluation mode (required in torch)
-infrastructure._vmPlacementPolicy._model.eval()
-
-metric = AUPMetric()
-eff_calc = EfficiencyCalculator()
-sim = Simulator.getInstance()
-sim.simulate()
-
-for machine in infrastructure.machines:
-    assert machine._vmScheduler.noVMsLeft == 0
-
-thCPUBestTime = totalOps.get(RType.CPU_core, 0) / total_CPU_power
-thGPUBestTime = totalOps.get(RType.GPU, 0) / total_GPU_power
-print("simulation time:               ", sim.time)
-print("sequence execution time:       ", seqTime)
-print("theoretical best possible time:", max(thCPUBestTime, thGPUBestTime))
-print("priority cost:                 ", metric.cost(args.SPAN == 0))
+model = infrastructure._vmPlacementPolicy._model
+score_fun = lambda m: -run_simulation(gen, infrastructure, m)
+trainer = RandomTrainer(model, score_fun, epoch_size=20, n_bests=4)
+for i in range(args.N_EPOCHS):
+    if args.VARFILE:
+        model = infrastructure._vmPlacementPolicy._model
+        model.saveVars(f"{args.VARFILE}_{i}")
+    score = trainer.step()
+    print(i, score, sep=':\t')
+    sys.stdout.flush()
+if args.VARFILE:
+    model = infrastructure._vmPlacementPolicy._model
+    model.saveVars(f"{args.VARFILE}_{args.N_EPOCHS}")
 
