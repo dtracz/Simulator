@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from toolkit import *
 from Simulator import *
 from Events import *
@@ -89,7 +90,7 @@ class VMPlacementPolicyAI(VMPlacementPolicySimple):
         # add batch dimension
         state_info = np.expand_dims(state_info, 0)
         task_info = np.expand_dims(task_info, 0)
-        scores = self._model((state_info, task_info))
+        scores = self._model.predict((state_info, task_info))
         # remove batch dimension
         scores = scores[0]
         ordered_indices = np.argsort(-scores)

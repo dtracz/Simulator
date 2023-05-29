@@ -12,6 +12,9 @@ class RandomModel:
         np.random.shuffle(y)
         return y
 
+    def predict(self, inp):
+        return self.__call__(inp)
+
     def eval(self):
         pass
 
@@ -80,6 +83,9 @@ class Model_v0_np:
         x = self.softmax(x)
         return x
 
+    def predict(self, inp):
+        return self.__call__(inp)
+
     def eval(self):
         pass
 
@@ -127,4 +133,7 @@ class Model_v0_torch(torch.nn.Module):
         x = self.flat(x)
         x = self.sm(x)
         return x
+
+    def predict(self, inp):
+        return self.__call__(inp).detach().numpy()
 
